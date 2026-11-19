@@ -2,7 +2,6 @@
     'product',
     'pricingTier' => \App\Enums\CustomerTier::Minorista,
     'useLivewireAdd' => false,
-    'badges' => [],
 ])
 
 @php
@@ -35,26 +34,14 @@
     })->values()->all();
 
     $totalStock = (int) $activeVariants->sum(fn (\App\Models\ProductVariant $v): int => $v->availableStock());
-    $galleryUrls = $product->gallery_urls;
     $mainImg = $product->image_url;
-    $textureImg = $galleryUrls[1] ?? $mainImg;
-
-    $badgeMeta = is_array($badges) ? $badges : [];
-    $isB2bKit = (bool) ($badgeMeta['is_b2b_kit'] ?? $product->is_b2b_kit);
-    $isNew = (bool) ($badgeMeta['is_new'] ?? $product->is_new_launch);
-    $isTopSeller = (bool) ($badgeMeta['is_top_seller'] ?? false);
-    $isLowStock = (bool) ($badgeMeta['is_low_stock'] ?? ($totalStock > 0 && $totalStock <= max(1, (int) $product->min_stock_alert)));
-    $reviewsCount = (int) ($badgeMeta['reviews_count'] ?? 0);
-    $avgRating = (float) ($badgeMeta['avg_rating'] ?? 0);
 @endphp
 
 <article
     x-data="{
         variants: @js($variantPayloads),
         mainImage: @js($mainImg),
-        textureImage: @js($textureImg),
         selectedIndex: 0,
-        hovered: false,
         get current() {
             return this.variants[this.selectedIndex] ?? {
                 id: 0,
@@ -72,46 +59,32 @@
     class="card-glamora-hover group flex h-full flex-col overflow-hidden"
 >
     {{-- Media Frame --}}
-    <div
-        @mouseenter="hovered = true"
-        @mouseleave="hovered = false"
-        class="relative aspect-square overflow-hidden bg-glamora-cream"
-    >
+    <div class="relative aspect-square overflow-hidden bg-glamora-cream">
         <a href="{{ route('product.show', $product->slug) }}" class="block h-full w-full">
             <img
-                :src="hovered && selectedIndex === 0 ? textureImage : current.image_url"
+                :src="current.image_url"
                 alt="{{ $product->name }}"
                 loading="lazy"
                 class="h-full w-full object-cover transition duration-500 group-hover:scale-105"
             >
         </a>
 
-        {{-- Top Automatic Badges --}}
-        <div class="pointer-events-none absolute top-3 left-3 flex max-w-[65%] flex-wrap gap-1.5">
-            @if ($isB2bKit)
+        {{-- Top Badges --}}
+        <div class="pointer-events-none absolute top-3 left-3 flex flex-wrap gap-1.5">
+            @if ($product->is_b2b_kit)
                 <span class="rounded-full bg-glamora-charcoal px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-glamora-gold shadow-xs">
                     Kit B2B
                 </span>
             @endif
-            @if ($isTopSeller)
-                <span class="rounded-full bg-glamora-gold px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-glamora-charcoal shadow-xs">
-                    Más Vendido
-                </span>
-            @endif
-            @if ($isNew)
+            @if ($product->is_new_launch)
                 <span class="rounded-full bg-glamora-terracotta px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-white shadow-xs">
                     Nuevo
                 </span>
             @endif
-            @if ($isLowStock && $totalStock > 0)
-                <span class="rounded-full border border-amber-300 bg-amber-50/95 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-amber-900 shadow-xs">
-                    Últimas Unidades
-                </span>
-            @endif
         </div>
 
-        {{-- Stock Pill & Rating --}}
-        <div class="pointer-events-none absolute top-3 right-3 flex flex-col items-end gap-1">
+        {{-- Stock Pill --}}
+        <div class="pointer-events-none absolute top-3 right-3">
             @if ($totalStock > 0)
                 <span class="rounded-full border border-emerald-200 bg-white/90 px-2.5 py-1 text-[10px] font-semibold text-emerald-800 backdrop-blur-xs">
                     Disponible · {{ $totalStock }} uds.
@@ -119,12 +92,6 @@
             @else
                 <span class="rounded-full border border-rose-200 bg-white/90 px-2.5 py-1 text-[10px] font-semibold text-rose-700">
                     Agotado
-                </span>
-            @endif
-
-            @if ($reviewsCount > 0)
-                <span class="rounded-full border border-glamora-gold/40 bg-white/90 px-2 py-0.5 text-[10px] font-bold text-glamora-charcoal backdrop-blur-xs">
-                    &#9733; {{ number_format($avgRating, 1) }} ({{ $reviewsCount }})
                 </span>
             @endif
         </div>
@@ -147,7 +114,7 @@
             {{ $product->short_description }}
         </p>
 
-        {{-- Interactive Hex Swatches (Hover & Click Preview) --}}
+        {{-- Interactive Hex Swatches --}}
         @if ($activeVariants->count() > 0)
             <div class="mt-4">
                 <div class="flex flex-wrap items-center gap-2">
@@ -160,7 +127,6 @@
                         <button
                             @if ($useLivewireAdd) wire:key="swatch-{{ $product->id }}-{{ $variant->id }}" @endif
                             type="button"
-                            @mouseenter="selectedIndex = {{ $idx }}"
                             @click="selectedIndex = {{ $idx }}"
                             :class="selectedIndex === {{ $idx }} ? 'swatch-ring-active' : ''"
                             class="swatch-ring h-6 w-6"

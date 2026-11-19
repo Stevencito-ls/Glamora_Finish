@@ -245,36 +245,6 @@
                 Actualizando catálogo en tiempo real...
             </div>
 
-            {{-- Skeleton Loader (#F3ECE4) al filtrar, buscar o cambiar vista --}}
-            <div
-                wire:loading
-                wire:target="category,brand,search,skinType,finishType,onlyB2bKits,sort,viewMode,pricingTier,clearFilters,gotoPage,previousPage,nextPage"
-                class="w-full"
-            >
-                <div class="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
-                    @for ($sk = 0; $sk < 6; $sk++)
-                        <div class="card-glamora overflow-hidden p-4">
-                            <div class="skeleton-glamora aspect-square w-full rounded-xl"></div>
-                            <div class="mt-4 space-y-2.5">
-                                <div class="skeleton-glamora h-3 w-1/3 rounded-full"></div>
-                                <div class="skeleton-glamora h-5 w-4/5 rounded-full"></div>
-                                <div class="skeleton-glamora h-3 w-full rounded-full"></div>
-                                <div class="flex gap-2 pt-2">
-                                    <div class="skeleton-glamora h-6 w-6 rounded-full"></div>
-                                    <div class="skeleton-glamora h-6 w-6 rounded-full"></div>
-                                    <div class="skeleton-glamora h-6 w-6 rounded-full"></div>
-                                </div>
-                                <div class="flex items-center justify-between pt-3">
-                                    <div class="skeleton-glamora h-6 w-20 rounded-full"></div>
-                                    <div class="skeleton-glamora h-9 w-28 rounded-full"></div>
-                                </div>
-                            </div>
-                        </div>
-                    @endfor
-                </div>
-            </div>
-
-            <div wire:loading.remove wire:target="category,brand,search,skinType,finishType,onlyB2bKits,sort,viewMode,pricingTier,clearFilters,gotoPage,previousPage,nextPage">
             @if ($viewMode !== 'matrix')
                 {{-- VISTA 1: CUADRÍCULA VISUAL --}}
                 @if ($products !== null && $products->count() > 0)
@@ -285,7 +255,6 @@
                                     'product' => $product,
                                     'pricingTier' => $previewTier,
                                     'useLivewireAdd' => true,
-                                    'badges' => $productBadges[$product->id] ?? [],
                                 ])
                             </div>
                         @endforeach
@@ -476,7 +445,6 @@
                     @endif
                 </div>
             @endif
-            </div>
         </section>
     </div>
 </div>

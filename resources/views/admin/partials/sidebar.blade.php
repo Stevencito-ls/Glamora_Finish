@@ -281,44 +281,6 @@
                         </li>
                     @endcan
                 @endif
-
-                {{-- 7. CONFIGURACIÓN WHITE-LABEL Y EXPERIENCIA --}}
-                @if ($adminUser?->can('settings.manage') || $adminUser?->can('announcements.manage') || $adminUser?->can('reviews.moderate'))
-                    <li class="nav-header">CONFIGURACIÓN &amp; TIENDA</li>
-                    @can('settings.manage')
-                        <li class="nav-item">
-                            <a
-                                href="{{ route('admin.settings.index') }}"
-                                class="nav-link {{ request()->routeIs('admin.settings.*') ? 'active' : '' }}"
-                            >
-                                <i class="nav-icon fas fa-palette"></i>
-                                <p>Configuración White-Label</p>
-                            </a>
-                        </li>
-                    @endcan
-                    @can('announcements.manage')
-                        <li class="nav-item">
-                            <a
-                                href="{{ route('admin.announcements.index') }}"
-                                class="nav-link {{ request()->routeIs('admin.announcements.*') ? 'active' : '' }}"
-                            >
-                                <i class="nav-icon fas fa-bullhorn"></i>
-                                <p>Anuncios Top Bar</p>
-                            </a>
-                        </li>
-                    @endcan
-                    @can('reviews.moderate')
-                        <li class="nav-item">
-                            <a
-                                href="{{ route('admin.reviews.index') }}"
-                                class="nav-link {{ request()->routeIs('admin.reviews.*') ? 'active' : '' }}"
-                            >
-                                <i class="nav-icon fas fa-star-half-alt"></i>
-                                <p>Reseñas Verificadas</p>
-                            </a>
-                        </li>
-                    @endcan
-                @endif
             </ul>
         </nav>
     </div>

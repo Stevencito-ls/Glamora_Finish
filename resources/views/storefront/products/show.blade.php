@@ -1,16 +1,10 @@
 @extends('layouts.storefront')
 
-@php
-    $waDefaultVariant = $product->variants->firstWhere('is_default', true) ?? $product->variants->first();
-    $waInitialPrice = $waDefaultVariant ? number_format((float) $waDefaultVariant->priceForTier($activeTier, 1), 2) : '0.00';
-@endphp
-
 @section('title', $product->meta_title ?: "{$product->name} | Glamora Perú")
 @section('meta_description', $product->meta_description ?: ($product->short_description ?: $product->name))
 @section('canonical_url', route('product.show', $product->slug))
 @section('og_type', 'product')
 @section('og_image', $galleryImages[0] ?? $product->image_url)
-@section('whatsapp_message', "Hola, quiero consultar sobre {$product->name} (Precio ref. S/ {$waInitialPrice}).")
 
 @push('structured_data')
     @php
@@ -142,7 +136,7 @@
                 return Number(this.current.base_price);
             }
         }"
-        class="mx-auto max-w-7xl px-4 py-10 pb-24 sm:px-6 md:pb-10 lg:px-8"
+        class="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8"
     >
         {{-- Breadcrumb --}}
         <nav aria-label="Breadcrumb" class="mb-6 flex flex-wrap items-center gap-2 text-xs text-glamora-muted">
@@ -376,19 +370,6 @@
                         <p x-show="activeTierValue === 'minorista' && quantity < 3" class="mt-2.5 text-[11px] text-glamora-muted">
                             Tip de ahorro: llevando 3 o más unidades accedes automáticamente al 5% de descuento por volumen minorista.
                         </p>
-
-                        @if (!empty($whatsappProductUrl))
-                            <div class="mt-3 flex justify-end">
-                                <a
-                                    href="{{ $whatsappProductUrl }}"
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    class="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-700 transition hover:text-emerald-900 hover:underline"
-                                >
-                                    Consultar este producto por WhatsApp &rarr;
-                                </a>
-                            </div>
-                        @endif
                     </form>
                 </div>
 
@@ -502,209 +483,6 @@
             </div>
         </section>
 
-        {{-- Reseñas Verificadas --}}
-        <section id="resenas" class="mt-14 card-glamora p-6 sm:p-8">
-            <div class="flex flex-wrap items-end justify-between gap-4 border-b border-glamora-blush/35 pb-5">
-                <div>
-                    <span class="text-xs font-bold uppercase tracking-[0.2em] text-glamora-terracotta">
-                        Opiniones Auditadas
-                    </span>
-                    <h2 class="mt-1 font-serif text-3xl font-semibold text-glamora-charcoal">
-                        Reseñas Verificadas ({{ $reviewsCount }})
-                    </h2>
-                </div>
-
-                @if ($reviewsCount > 0)
-                    <div class="flex items-center gap-3 rounded-2xl border border-glamora-gold/40 bg-glamora-cream/80 px-4 py-2.5">
-                        <span class="font-serif text-3xl font-bold text-glamora-charcoal">
-                            {{ number_format((float) $averageRating, 1) }}
-                        </span>
-                        <div class="text-xs">
-                            <div class="text-glamora-gold" aria-label="Calificación promedio {{ number_format((float) $averageRating, 1) }} de 5">
-                                @for ($i = 1; $i <= 5; $i++)
-                                    <span>{{ $i <= round((float) $averageRating) ? '★' : '☆' }}</span>
-                                @endfor
-                            </div>
-                            <span class="text-glamora-muted">Basado en {{ $reviewsCount }} {{ $reviewsCount === 1 ? 'compra' : 'compras' }}</span>
-                        </div>
-                    </div>
-                @endif
-            </div>
-
-            @if (session('review_success'))
-                <div class="mt-5 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-900">
-                    {{ session('review_success') }}
-                </div>
-            @endif
-
-            @if ($errors->has('review') || $errors->has('rating') || $errors->has('comment'))
-                <div class="mt-5 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-xs text-rose-900">
-                    @foreach (['review', 'rating', 'comment'] as $errKey)
-                        @error($errKey)
-                            <p class="font-semibold">{{ $message }}</p>
-                        @enderror
-                    @endforeach
-                </div>
-            @endif
-
-            <div class="mt-6 grid gap-8 lg:grid-cols-12">
-                {{-- Desglose & Formulario --}}
-                <div class="space-y-6 lg:col-span-5">
-                    @if ($reviewsCount > 0)
-                        <div class="space-y-2 rounded-2xl border border-glamora-blush/30 bg-glamora-cream/55 p-4">
-                            @for ($star = 5; $star >= 1; $star--)
-                                @php
-                                    $starCount = (int) ($ratingBreakdown[$star] ?? 0);
-                                    $starPct = $reviewsCount > 0 ? round(($starCount / $reviewsCount) * 100) : 0;
-                                @endphp
-                                <div class="flex items-center gap-3 text-xs">
-                                    <span class="w-12 shrink-0 font-semibold text-glamora-charcoal">{{ $star }} &#9733;</span>
-                                    <div class="h-2 flex-1 overflow-hidden rounded-full bg-white">
-                                        <div class="h-full rounded-full bg-glamora-gold" style="width: {{ $starPct }}%"></div>
-                                    </div>
-                                    <span class="w-8 shrink-0 text-right text-glamora-muted">{{ $starCount }}</span>
-                                </div>
-                            @endfor
-                        </div>
-                    @endif
-
-                    @if ($canReview)
-                        <form action="{{ route('product.reviews.store', $product->slug) }}" method="POST" class="space-y-4 rounded-2xl border border-glamora-blush/40 bg-glamora-cream/70 p-5">
-                            @csrf
-                            <div>
-                                <span class="inline-flex rounded-full bg-emerald-100 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-emerald-800">
-                                    Compra Verificada Elegible
-                                </span>
-                                <h3 class="mt-2 font-serif text-xl font-semibold text-glamora-charcoal">
-                                    Comparte tu experiencia
-                                </h3>
-                            </div>
-
-                            <div>
-                                <label for="review_rating" class="mb-1 block text-xs font-semibold text-glamora-charcoal">
-                                    Calificación *
-                                </label>
-                                <select id="review_rating" name="rating" class="input-glamora text-xs" required>
-                                    @for ($r = 5; $r >= 1; $r--)
-                                        <option value="{{ $r }}" @selected((int) old('rating', 5) === $r)>
-                                            {{ $r }} {{ $r === 1 ? 'estrella' : 'estrellas' }}
-                                        </option>
-                                    @endfor
-                                </select>
-                            </div>
-
-                            <div>
-                                <label for="review_title" class="mb-1 block text-xs font-semibold text-glamora-charcoal">
-                                    Título breve (opcional)
-                                </label>
-                                <input
-                                    id="review_title"
-                                    type="text"
-                                    name="title"
-                                    value="{{ old('title') }}"
-                                    maxlength="120"
-                                    placeholder="Ej. Excelente fijación y textura ligera"
-                                    class="input-glamora text-xs"
-                                >
-                            </div>
-
-                            <div>
-                                <label for="review_comment" class="mb-1 block text-xs font-semibold text-glamora-charcoal">
-                                    Tu reseña *
-                                </label>
-                                <textarea
-                                    id="review_comment"
-                                    name="comment"
-                                    rows="3"
-                                    required
-                                    minlength="10"
-                                    placeholder="Cuéntanos sobre el acabado, duración o compatibilidad con tu piel..."
-                                    class="input-glamora text-xs"
-                                >{{ old('comment') }}</textarea>
-                            </div>
-
-                            <button type="submit" class="btn-glamora-primary w-full py-2.5 text-xs uppercase tracking-wider">
-                                Enviar Reseña Verificada
-                            </button>
-                        </form>
-                    @elseif ($hasAlreadyReviewed && $userReview)
-                        <div class="rounded-2xl border border-glamora-gold/35 bg-glamora-cream/70 p-4 text-xs text-glamora-charcoal">
-                            <p class="font-bold">Ya registraste tu reseña para este producto.</p>
-                            <p class="mt-1 text-glamora-muted">
-                                Estado actual: <strong>{{ $userReview->status === 'approved' ? 'Publicada' : ($userReview->status === 'pending' ? 'En moderación editorial' : 'Rechazada') }}</strong>.
-                            </p>
-                        </div>
-                    @else
-                        <div class="rounded-2xl border border-glamora-blush/35 bg-glamora-cream/60 p-4 text-xs text-glamora-muted">
-                            Solo los clientes con un pedido en estado <strong>Entregado</strong> que incluya este producto pueden publicar una reseña verificada.
-                        </div>
-                    @endif
-                </div>
-
-                {{-- Listado de Reseñas --}}
-                <div class="space-y-4 lg:col-span-7">
-                    @forelse ($approvedReviews as $review)
-                        <article class="rounded-2xl border border-glamora-blush/35 bg-white p-5 shadow-2xs">
-                            <div class="flex flex-wrap items-start justify-between gap-2">
-                                <div>
-                                    <div class="flex flex-wrap items-center gap-2">
-                                        <span class="font-semibold text-glamora-charcoal">{{ $review->author_name }}</span>
-                                        @if ($review->is_verified_purchase)
-                                            <span class="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-0.5 text-[10px] font-bold text-emerald-800">
-                                                Compra Verificada
-                                            </span>
-                                        @endif
-                                    </div>
-                                    @if ($review->shade_purchased)
-                                        <p class="mt-0.5 text-[11px] text-glamora-muted">
-                                            Tono adquirido: {{ $review->shade_purchased }}
-                                        </p>
-                                    @endif
-                                </div>
-
-                                <div class="text-right">
-                                    <div class="text-sm text-glamora-gold">
-                                        @for ($s = 1; $s <= 5; $s++)
-                                            <span>{{ $s <= (int) $review->rating ? '★' : '☆' }}</span>
-                                        @endfor
-                                    </div>
-                                    <span class="text-[11px] text-glamora-muted">
-                                        {{ $review->created_at?->format('d/m/Y') }}
-                                    </span>
-                                </div>
-                            </div>
-
-                            @if ($review->title)
-                                <h4 class="mt-3 font-serif text-lg font-semibold text-glamora-charcoal">
-                                    {{ $review->title }}
-                                </h4>
-                            @endif
-
-                            <p class="mt-1.5 text-sm leading-relaxed text-glamora-charcoal/85">
-                                {{ $review->comment }}
-                            </p>
-
-                            @if ($review->admin_reply)
-                                <div class="mt-3 rounded-xl border-l-2 border-glamora-terracotta bg-glamora-cream/80 px-4 py-2.5 text-xs text-glamora-charcoal">
-                                    <span class="block font-bold text-glamora-terracotta">Respuesta Glamora:</span>
-                                    <p class="mt-0.5">{{ $review->admin_reply }}</p>
-                                </div>
-                            @endif
-                        </article>
-                    @empty
-                        <div class="rounded-2xl border border-dashed border-glamora-blush/50 bg-glamora-cream/40 p-8 text-center">
-                            <p class="font-serif text-xl font-semibold text-glamora-charcoal">
-                                Aún no hay reseñas publicadas
-                            </p>
-                            <p class="mt-1 text-xs text-glamora-muted">
-                                Sé la primera persona en calificar esta fórmula tras recibir tu pedido entregado.
-                            </p>
-                        </div>
-                    @endforelse
-                </div>
-            </div>
-        </section>
-
         {{-- Related Products --}}
         @if ($relatedProducts->isNotEmpty())
             <section class="mt-16">
@@ -725,33 +503,10 @@
                         @include('storefront.partials.product-card', [
                             'product' => $related,
                             'pricingTier' => $activeTier,
-                            'badges' => $productBadges[$related->id] ?? [],
                         ])
                     @endforeach
                 </div>
             </section>
         @endif
-
-        {{-- Sticky Mobile Bottom CTA sincronizado con variantes y cantidad --}}
-        <div class="md:hidden fixed inset-x-0 bottom-0 z-40 border-t border-glamora-blush/40 bg-white/95 px-4 py-3 shadow-[0_-8px_24px_rgba(43,37,35,0.1)] backdrop-blur-md">
-            <form action="{{ route('cart.add') }}" method="POST" class="flex items-center justify-between gap-3">
-                @csrf
-                <input type="hidden" name="variant_id" :value="current ? current.id : ''">
-                <input type="hidden" name="quantity" :value="quantity">
-
-                <div class="min-w-0">
-                    <p class="truncate text-[11px] font-semibold text-glamora-muted" x-text="current ? current.shade_name + ' · x' + quantity : ''"></p>
-                    <p class="font-serif text-xl font-bold text-glamora-charcoal" x-text="'S/ ' + (effectiveUnitPrice() * Math.max(1, Number(quantity) || 1)).toFixed(2)"></p>
-                </div>
-
-                <button
-                    type="submit"
-                    :disabled="!current || current.available_stock <= 0"
-                    class="btn-glamora-primary shrink-0 px-5 py-2.5 text-xs uppercase tracking-wider"
-                >
-                    Agregar a la Bolsa
-                </button>
-            </form>
-        </div>
     </div>
 @endsection

@@ -6,9 +6,6 @@
 @section('content')
     @php
         $primaryPayment = $order->payments->first();
-        $resolvedWhatsappUrl = session('whatsapp_order_url') ?: ($whatsappOrderUrl ?? null);
-        $showWhatsappCta = $resolvedWhatsappUrl
-            && (!empty($whatsappCheckoutEnabled) || $primaryPayment?->payment_method === \App\Enums\PaymentMethod::Whatsapp);
     @endphp
 
     <div class="mx-auto max-w-5xl px-4 py-12 sm:px-6 lg:px-8">
@@ -40,27 +37,6 @@
             </div>
 
             <div class="space-y-8 p-6 sm:p-10">
-                @if ($showWhatsappCta)
-                    <div class="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-emerald-300 bg-emerald-50 p-5">
-                        <div>
-                            <p class="text-xs font-bold uppercase tracking-wider text-emerald-800">
-                                Coordinación Directa por WhatsApp
-                            </p>
-                            <p class="mt-1 text-sm text-emerald-950">
-                                Envía el detalle de tu orden <strong>{{ $order->order_number }}</strong> directamente a nuestro equipo comercial para confirmar pago y despacho.
-                            </p>
-                        </div>
-                        <a
-                            href="{{ $resolvedWhatsappUrl }}"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            class="inline-flex shrink-0 items-center gap-2 rounded-full bg-[#25D366] px-6 py-3 text-xs font-bold uppercase tracking-wider text-white shadow-sm transition hover:bg-[#1ebe5d]"
-                        >
-                            Enviar Pedido por WhatsApp &rarr;
-                        </a>
-                    </div>
-                @endif
-
                 {{-- Key Action Buttons --}}
                 <div class="flex flex-wrap gap-3">
                     <a

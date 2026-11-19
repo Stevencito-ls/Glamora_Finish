@@ -153,14 +153,14 @@
 
                             <div>
                                 <label for="customer_email" class="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-glamora-charcoal">
-                                    Correo electrónico <span x-show="paymentMethod !== 'whatsapp'">*</span>
+                                    Correo electrónico *
                                 </label>
                                 <input
                                     id="customer_email"
                                     type="email"
                                     name="customer_email"
                                     value="{{ $prefillEmail }}"
-                                    :required="paymentMethod !== 'whatsapp'"
+                                    required
                                     class="input-glamora"
                                 >
                             </div>
@@ -193,14 +193,14 @@
                                 </div>
                                 <div class="col-span-2">
                                     <label for="document_number" class="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-glamora-charcoal">
-                                        N.º Documento <span x-show="paymentMethod !== 'whatsapp'">*</span>
+                                        N.º Documento *
                                     </label>
                                     <input
                                         id="document_number"
                                         type="text"
                                         name="document_number"
                                         value="{{ $prefillDocNumber }}"
-                                        :required="paymentMethod !== 'whatsapp'"
+                                        required
                                         placeholder="72456789 / 2060..."
                                         class="input-glamora font-mono"
                                     >
@@ -209,14 +209,14 @@
 
                             <div class="sm:col-span-2">
                                 <label for="shipping_address" class="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-glamora-charcoal">
-                                    Dirección exacta de entrega <span x-show="paymentMethod !== 'whatsapp'">*</span>
+                                    Dirección exacta de entrega *
                                 </label>
                                 <input
                                     id="shipping_address"
                                     type="text"
                                     name="shipping_address"
                                     x-model="shippingAddress"
-                                    :required="paymentMethod !== 'whatsapp'"
+                                    required
                                     placeholder="Av. Larco 1150, Dpto 401"
                                     class="input-glamora"
                                 >
@@ -224,14 +224,14 @@
 
                             <div>
                                 <label for="shipping_district" class="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-glamora-charcoal">
-                                    Distrito <span x-show="paymentMethod !== 'whatsapp'">*</span>
+                                    Distrito *
                                 </label>
                                 <input
                                     id="shipping_district"
                                     type="text"
                                     name="shipping_district"
                                     x-model="shippingDistrict"
-                                    :required="paymentMethod !== 'whatsapp'"
+                                    required
                                     placeholder="Miraflores"
                                     class="input-glamora"
                                 >
@@ -239,14 +239,14 @@
 
                             <div>
                                 <label for="shipping_city" class="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-glamora-charcoal">
-                                    Ciudad / Departamento <span x-show="paymentMethod !== 'whatsapp'">*</span>
+                                    Ciudad / Departamento *
                                 </label>
                                 <input
                                     id="shipping_city"
                                     type="text"
                                     name="shipping_city"
                                     x-model="shippingCity"
-                                    :required="paymentMethod !== 'whatsapp'"
+                                    required
                                     placeholder="Lima"
                                     class="input-glamora"
                                 >
@@ -621,24 +621,6 @@
                                     </p>
                                 @endif
                             </div>
-
-                            {{-- WHATSAPP ASISTIDO --}}
-                            <div x-show="paymentMethod === 'whatsapp'" x-cloak class="space-y-2.5">
-                                <div class="flex items-center justify-between">
-                                    <h3 class="font-serif text-xl font-semibold text-glamora-charcoal">
-                                        Pedido Asistido por WhatsApp
-                                    </h3>
-                                    <span class="rounded-full bg-emerald-100 px-3 py-1 text-[11px] font-bold text-emerald-800">
-                                        Atención Directa
-                                    </span>
-                                </div>
-                                <p class="text-xs text-glamora-muted">
-                                    {{ \App\Enums\PaymentMethod::Whatsapp->instructions() }}
-                                </p>
-                                <p class="text-xs font-medium text-glamora-charcoal">
-                                    Solo necesitas tu nombre y teléfono/WhatsApp para generar el número de orden y abrir el chat con tu resumen listo.
-                                </p>
-                            </div>
                         </div>
                     </section>
                 </div>
@@ -704,28 +686,11 @@
 
                         <button
                             type="submit"
-                            name="checkout_action"
-                            value="standard"
                             :disabled="paymentMethod === 'credito_b2b' && !b2bEnough"
                             class="btn-glamora-primary mt-6 w-full justify-center"
                         >
                             Confirmar Pedido &rarr;
                         </button>
-
-                        @if (!empty($whatsappCheckoutEnabled))
-                            <button
-                                type="submit"
-                                name="checkout_action"
-                                value="whatsapp_quick"
-                                formnovalidate
-                                class="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-full border border-emerald-500/40 bg-[#25D366] px-6 py-3 text-xs font-bold uppercase tracking-wider text-white shadow-sm transition hover:bg-[#1ebe5d]"
-                            >
-                                <svg class="h-4 w-4 fill-current" viewBox="0 0 24 24" aria-hidden="true">
-                                    <path d="M20.52 3.48A11.86 11.86 0 0 0 12.06 0C5.47 0 .1 5.37.1 11.96c0 2.11.55 4.17 1.6 5.98L0 24l6.23-1.63a11.93 11.93 0 0 0 5.83 1.49h.01c6.59 0 11.96-5.37 11.96-11.96 0-3.19-1.24-6.19-3.51-8.42Z"/>
-                                </svg>
-                                Enviar Pedido por WhatsApp
-                            </button>
-                        @endif
 
                         <p class="mt-3 text-center text-[11px] text-glamora-muted">
                             Al confirmar, asignaremos automáticamente tus lotes FEFO con fecha de vencimiento más próxima vigente.

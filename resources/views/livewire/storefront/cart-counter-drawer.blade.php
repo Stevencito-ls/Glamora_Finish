@@ -197,57 +197,6 @@
                             @endforeach
                         </div>
                     @endif
-
-                    {{-- Completa tu Rutina (Venta Cruzada) --}}
-                    @if (isset($crossSellProducts) && $crossSellProducts->isNotEmpty())
-                        <div class="mt-6 border-t border-glamora-blush/35 pt-5">
-                            <p class="text-[11px] font-bold uppercase tracking-[0.18em] text-glamora-terracotta">
-                                Completa tu Rutina
-                            </p>
-                            <div class="mt-3 space-y-2.5">
-                                @foreach ($crossSellProducts->take(3) as $csProduct)
-                                    @php
-                                        $csVariant = $csProduct->variants->firstWhere('is_default', true) ?? $csProduct->variants->first();
-                                        $csPrice = $csVariant ? $csVariant->priceForTier($activeTier, 1) : 0.0;
-                                        $csStock = $csVariant ? $csVariant->availableStock() : 0;
-                                    @endphp
-                                    @if ($csVariant && $csStock > 0)
-                                        <div
-                                            wire:key="drawer-cs-{{ $csProduct->id }}"
-                                            class="flex items-center justify-between gap-3 rounded-xl border border-glamora-blush/30 bg-white p-2.5 shadow-2xs"
-                                        >
-                                            <a
-                                                href="{{ route('product.show', $csProduct->slug) }}"
-                                                wire:click="closeDrawer"
-                                                class="flex min-w-0 flex-1 items-center gap-2.5"
-                                            >
-                                                <img
-                                                    src="{{ $csVariant->image_url ?: $csProduct->image_url }}"
-                                                    alt="{{ $csProduct->name }}"
-                                                    class="h-11 w-11 shrink-0 rounded-lg border border-glamora-blush/25 bg-glamora-cream object-cover"
-                                                >
-                                                <div class="min-w-0">
-                                                    <p class="truncate text-xs font-semibold text-glamora-charcoal">
-                                                        {{ $csProduct->name }}
-                                                    </p>
-                                                    <p class="truncate text-[11px] text-glamora-muted">
-                                                        {{ $csVariant->shade_name }} · <strong class="text-glamora-charcoal">S/ {{ number_format($csPrice, 2) }}</strong>
-                                                    </p>
-                                                </div>
-                                            </a>
-                                            <button
-                                                type="button"
-                                                wire:click="quickAddCrossSell({{ $csVariant->id }})"
-                                                class="shrink-0 rounded-full bg-glamora-terracotta px-3 py-1.5 text-[11px] font-semibold text-white transition hover:bg-glamora-charcoal"
-                                            >
-                                                + Bolsa
-                                            </button>
-                                        </div>
-                                    @endif
-                                @endforeach
-                            </div>
-                        </div>
-                    @endif
                 </div>
 
                 {{-- Footer --}}

@@ -22,7 +22,6 @@ use App\Models\WholesaleProfile;
 use App\Services\CartSessionService;
 use App\Services\FefoService;
 use App\Services\PricingService;
-use App\Services\SettingService;
 use App\Services\ShippingService;
 use App\ValueObjects\MoneyAmount;
 use App\ValueObjects\PriceCalculation;
@@ -45,7 +44,6 @@ class CheckoutController extends Controller
     public function index(
         CartSessionService $cartService,
         ShippingService $shippingService,
-        SettingService $settingService,
     ): View|RedirectResponse {
         $summary = $cartService->summary();
 
@@ -77,12 +75,6 @@ class CheckoutController extends Controller
             ->mapWithKeys(fn ($quote, $key): array => [$key => $quote->toArray()])
             ->all();
 
-        $whatsappCheckoutEnabled = $settingService->whatsappCheckoutEnabled();
-        $paymentMethods = array_values(array_filter(
-            PaymentMethod::cases(),
-            static fn (PaymentMethod $method): bool => $method !== PaymentMethod::Whatsapp || $whatsappCheckoutEnabled
-        ));
-
         return view('storefront.checkout.index', [
             'summary' => $summary,
             'user' => $user,
@@ -93,8 +85,7 @@ class CheckoutController extends Controller
             'canUseB2bCredit' => $canUseB2bCredit,
             'shippingMethods' => ShippingMethod::cases(),
             'shippingQuotes' => $shippingQuotes,
-            'paymentMethods' => $paymentMethods,
-            'whatsappCheckoutEnabled' => $whatsappCheckoutEnabled,
+            'paymentMethods' => PaymentMethod::cases(),
         ]);
     }
 
@@ -104,7 +95,6 @@ class CheckoutController extends Controller
         PricingService $pricingService,
         ShippingService $shippingService,
         FefoService $fefoService,
-        SettingService $settingService,
     ): RedirectResponse {
         $cartItems = $cartService->getItems();
 
@@ -114,29 +104,18 @@ class CheckoutController extends Controller
                 ->with('cart_error', 'Tu carrito está vacío. Agrega productos antes de finalizar tu compra.');
         }
 
-        $isWhatsappQuick = $request->input('checkout_action') === 'whatsapp_quick';
-        if ($isWhatsappQuick) {
-            $request->merge(['payment_method' => PaymentMethod::Whatsapp->value]);
-        }
-        $isWhatsappFlow = $isWhatsappQuick || $request->input('payment_method') === PaymentMethod::Whatsapp->value;
-
         $validated = $request->validate([
-            'checkout_action' => ['nullable', 'string', Rule::in(['standard', 'whatsapp_quick'])],
             'customer_name' => ['required', 'string', 'min:3', 'max:150'],
-            'customer_email' => [$isWhatsappFlow ? 'nullable' : 'required', 'email:rfc', 'max:150'],
+            'customer_email' => ['required', 'email:rfc', 'max:150'],
             'customer_phone' => ['required', 'string', 'min:7', 'max:25'],
-            'document_type' => [$isWhatsappFlow ? 'nullable' : 'required', 'string', Rule::in(['DNI', 'RUC', 'CE'])],
+            'document_type' => ['required', 'string', Rule::in(['DNI', 'RUC', 'CE'])],
             'document_number' => [
-                $isWhatsappFlow ? 'nullable' : 'required',
+                'required',
                 'string',
                 'min:6',
                 'max:20',
                 function (string $attribute, mixed $value, Closure $fail) use ($request): void {
                     $clean = trim((string) $value);
-                    if ($clean === '') {
-                        return;
-                    }
-
                     $docType = (string) $request->input('document_type', 'DNI');
 
                     if ($docType === 'DNI' && preg_match('/^\d{8}$/', $clean) !== 1) {
@@ -148,18 +127,17 @@ class CheckoutController extends Controller
                     }
                 },
             ],
-            'shipping_address' => [$isWhatsappFlow ? 'nullable' : 'required', 'string', 'min:5', 'max:255'],
-            'shipping_district' => [$isWhatsappFlow ? 'nullable' : 'required', 'string', 'min:2', 'max:100'],
-            'shipping_city' => [$isWhatsappFlow ? 'nullable' : 'required', 'string', 'min:2', 'max:100'],
-            'shipping_method' => [$isWhatsappFlow ? 'nullable' : 'required', 'string', Rule::in(ShippingMethod::values())],
+            'shipping_address' => ['required', 'string', 'min:5', 'max:255'],
+            'shipping_district' => ['required', 'string', 'min:2', 'max:100'],
+            'shipping_city' => ['required', 'string', 'min:2', 'max:100'],
+            'shipping_method' => ['required', 'string', Rule::in(ShippingMethod::values())],
             'payment_method' => ['required', 'string', Rule::in(PaymentMethod::values())],
             'notes' => ['nullable', 'string', 'max:1000'],
-            'card_holder' => ['exclude_if:payment_method,whatsapp', 'nullable', 'string', 'max:120'],
-            'card_last4' => ['exclude_if:payment_method,whatsapp', 'required_if:payment_method,tarjeta', 'nullable', 'digits:4'],
-            'three_ds_code' => ['exclude_if:payment_method,whatsapp', 'nullable', 'string', 'max:40'],
-            'bank_name' => ['exclude_if:payment_method,whatsapp', 'nullable', 'string', 'max:60'],
+            'card_holder' => ['nullable', 'string', 'max:120'],
+            'card_last4' => ['required_if:payment_method,tarjeta', 'nullable', 'digits:4'],
+            'three_ds_code' => ['nullable', 'string', 'max:40'],
+            'bank_name' => ['nullable', 'string', 'max:60'],
             'transaction_reference' => [
-                'exclude_if:payment_method,whatsapp',
                 Rule::requiredIf(fn (): bool => in_array($request->input('payment_method'), ['yape_plin', 'transferencia'], true)),
                 'nullable',
                 'string',
@@ -167,7 +145,6 @@ class CheckoutController extends Controller
                 'max:120',
             ],
             'voucher' => [
-                'exclude_if:payment_method,whatsapp',
                 Rule::requiredIf(fn (): bool => in_array($request->input('payment_method'), ['yape_plin', 'transferencia'], true)),
                 'nullable',
                 'file',
@@ -175,14 +152,12 @@ class CheckoutController extends Controller
                 'max:4096',
             ],
             'crypto_network' => [
-                'exclude_if:payment_method,whatsapp',
                 Rule::requiredIf(fn (): bool => $request->input('payment_method') === 'cripto'),
                 'nullable',
                 'string',
                 Rule::in(['TRC20', 'Polygon', 'ERC20']),
             ],
             'crypto_tx_hash' => [
-                'exclude_if:payment_method,whatsapp',
                 Rule::requiredIf(fn (): bool => $request->input('payment_method') === 'cripto'),
                 'nullable',
                 'string',
@@ -208,7 +183,7 @@ class CheckoutController extends Controller
         ]);
 
         $paymentMethod = PaymentMethod::from($validated['payment_method']);
-        $shippingMethod = ShippingMethod::tryFrom((string) ($validated['shipping_method'] ?? '')) ?? ShippingMethod::Estandar;
+        $shippingMethod = ShippingMethod::from($validated['shipping_method']);
         $user = Auth::user();
         $authenticatedUser = $user instanceof User ? $user : null;
 
@@ -224,42 +199,11 @@ class CheckoutController extends Controller
                 ]);
         }
 
-        if ($paymentMethod === PaymentMethod::Whatsapp && ! $settingService->whatsappCheckoutEnabled()) {
-            throw ValidationException::withMessages([
-                'payment_method' => 'El checkout asistido por WhatsApp se encuentra deshabilitado actualmente.',
-            ]);
-        }
-
         if ($paymentMethod === PaymentMethod::CreditoB2b && ($authenticatedUser === null || ! $authenticatedUser->hasApprovedWholesale())) {
             throw ValidationException::withMessages([
                 'payment_method' => 'El pago con Crédito B2B solo está habilitado para cuentas mayoristas aprobadas.',
             ]);
         }
-
-        $resolvedEmail = isset($validated['customer_email']) && trim((string) $validated['customer_email']) !== ''
-            ? mb_strtolower(trim((string) $validated['customer_email']))
-            : ($authenticatedUser?->email ?? ('whatsapp.' . (preg_replace('/\D+/', '', (string) $validated['customer_phone']) ?: 'cliente') . '@glamora.pe'));
-
-        $resolvedDocType = (string) ($validated['document_type'] ?? 'DNI');
-        $resolvedDocNumber = isset($validated['document_number']) && trim((string) $validated['document_number']) !== ''
-            ? trim((string) $validated['document_number'])
-            : null;
-        $resolvedAddress = isset($validated['shipping_address']) && trim((string) $validated['shipping_address']) !== ''
-            ? trim((string) $validated['shipping_address'])
-            : 'Por coordinar vía WhatsApp';
-        $resolvedDistrict = isset($validated['shipping_district']) && trim((string) $validated['shipping_district']) !== ''
-            ? trim((string) $validated['shipping_district'])
-            : 'Lima Metropolitana';
-        $resolvedCity = isset($validated['shipping_city']) && trim((string) $validated['shipping_city']) !== ''
-            ? trim((string) $validated['shipping_city'])
-            : 'Lima';
-
-        $validated['customer_email'] = $resolvedEmail;
-        $validated['document_type'] = $resolvedDocType;
-        $validated['document_number'] = $resolvedDocNumber;
-        $validated['shipping_address'] = $resolvedAddress;
-        $validated['shipping_district'] = $resolvedDistrict;
-        $validated['shipping_city'] = $resolvedCity;
 
         $voucherPath = null;
         if ($paymentMethod->requiresVoucher() && $request->hasFile('voucher')) {
@@ -560,25 +504,17 @@ class CheckoutController extends Controller
         $allowedOrders[] = $order->order_number;
         session(['checkout_allowed_orders' => array_values(array_unique($allowedOrders))]);
 
-        $redirect = redirect()
+        return redirect()
             ->route('checkout.confirmation', $order->order_number)
             ->with('checkout_success', "Pedido {$order->order_number} registrado correctamente con trazabilidad FEFO.");
-
-        if ($paymentMethod === PaymentMethod::Whatsapp || $isWhatsappQuick) {
-            $redirect->with('whatsapp_order_url', $settingService->buildOrderWhatsappUrl($order));
-        }
-
-        return $redirect;
     }
 
-    public function confirmation(string $orderNumber, SettingService $settingService): View
+    public function confirmation(string $orderNumber): View
     {
         $order = $this->resolveAuthorizedOrder($orderNumber);
 
         return view('storefront.checkout.confirmation', [
             'order' => $order,
-            'whatsappOrderUrl' => $settingService->buildOrderWhatsappUrl($order),
-            'whatsappCheckoutEnabled' => $settingService->whatsappCheckoutEnabled(),
         ]);
     }
 
@@ -653,10 +589,6 @@ class CheckoutController extends Controller
             PaymentMethod::CreditoB2b => [
                 'CRED-B2B-' . $orderNumber,
                 'Cargo automático a línea de crédito mayorista Glamora B2B aprobada.',
-            ],
-            PaymentMethod::Whatsapp => [
-                'WA-' . $orderNumber,
-                'Pedido registrado para coordinación de pago y despacho vía WhatsApp.',
             ],
         };
     }

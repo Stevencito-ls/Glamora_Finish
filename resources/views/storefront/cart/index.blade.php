@@ -331,17 +331,6 @@
                                 Descargar Cotización PDF
                             </a>
 
-                            @if (!empty($whatsappCheckoutEnabled) && !empty($whatsappCartUrl))
-                                <a
-                                    href="{{ $whatsappCartUrl }}"
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    class="inline-flex w-full items-center justify-center gap-2 rounded-full border border-emerald-300 bg-emerald-50 px-5 py-2.5 text-xs font-bold uppercase tracking-wider text-emerald-800 transition hover:bg-emerald-600 hover:text-white"
-                                >
-                                    Cotizar Bolsa por WhatsApp
-                                </a>
-                            @endif
-
                             <a href="{{ route('catalog.index') }}" class="block pt-2 text-center text-xs font-semibold text-glamora-muted hover:text-glamora-terracotta">
                                 &larr; Seguir explorando el catálogo
                             </a>
@@ -349,78 +338,6 @@
                     </div>
                 </aside>
             </div>
-        @endif
-
-        {{-- Completa tu Rutina (Venta Cruzada) --}}
-        @if (isset($crossSellProducts) && $crossSellProducts->isNotEmpty())
-            <section class="mt-14 border-t border-glamora-blush/35 pt-10">
-                <div class="mb-6 flex flex-wrap items-end justify-between gap-4">
-                    <div>
-                        <span class="text-xs font-bold uppercase tracking-[0.2em] text-glamora-terracotta">
-                            Recomendados para ti
-                        </span>
-                        <h2 class="mt-1 font-serif text-3xl font-semibold text-glamora-charcoal">
-                            Completa tu Rutina
-                        </h2>
-                    </div>
-                    <a href="{{ route('catalog.index') }}" class="text-xs font-semibold uppercase tracking-wider text-glamora-charcoal hover:text-glamora-terracotta">
-                        Explorar más &rarr;
-                    </a>
-                </div>
-
-                <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                    @foreach ($crossSellProducts->take(3) as $csProduct)
-                        @php
-                            $csVariant = $csProduct->variants->firstWhere('is_default', true) ?? $csProduct->variants->first();
-                            $csPrice = $csVariant ? $csVariant->priceForTier($activeTier, 1) : 0.0;
-                            $csStock = $csVariant ? $csVariant->availableStock() : 0;
-                        @endphp
-                        @if ($csVariant)
-                            <div class="card-glamora-hover flex flex-col justify-between overflow-hidden p-4">
-                                <div class="flex items-start gap-4">
-                                    <a href="{{ route('product.show', $csProduct->slug) }}" class="h-20 w-20 shrink-0 overflow-hidden rounded-xl border border-glamora-blush/30 bg-glamora-cream">
-                                        <img
-                                            src="{{ $csVariant->image_url ?: $csProduct->image_url }}"
-                                            alt="{{ $csProduct->name }}"
-                                            class="h-full w-full object-cover"
-                                        >
-                                    </a>
-                                    <div class="min-w-0 flex-1">
-                                        <p class="text-[10px] font-bold uppercase tracking-wider text-glamora-terracotta">
-                                            {{ $csProduct->brand?->name }}
-                                        </p>
-                                        <a href="{{ route('product.show', $csProduct->slug) }}" class="mt-0.5 block font-serif text-lg font-semibold leading-snug text-glamora-charcoal hover:text-glamora-terracotta">
-                                            {{ $csProduct->name }}
-                                        </a>
-                                        <p class="mt-1 truncate text-xs text-glamora-muted">
-                                            {{ $csVariant->shade_name }} · <span class="font-mono text-[10px]">{{ $csVariant->sku }}</span>
-                                        </p>
-                                    </div>
-                                </div>
-
-                                <div class="mt-4 flex items-center justify-between border-t border-glamora-blush/25 pt-3">
-                                    <span class="font-serif text-xl font-bold text-glamora-charcoal">
-                                        S/ {{ number_format($csPrice, 2) }}
-                                    </span>
-
-                                    <form action="{{ route('cart.add') }}" method="POST">
-                                        @csrf
-                                        <input type="hidden" name="variant_id" value="{{ $csVariant->id }}">
-                                        <input type="hidden" name="quantity" value="1">
-                                        <button
-                                            type="submit"
-                                            @disabled($csStock <= 0)
-                                            class="rounded-full bg-glamora-terracotta px-4 py-1.5 text-xs font-semibold text-white transition hover:bg-glamora-charcoal disabled:opacity-45"
-                                        >
-                                            + Bolsa
-                                        </button>
-                                    </form>
-                                </div>
-                            </div>
-                        @endif
-                    @endforeach
-                </div>
-            </section>
         @endif
     </div>
 @endsection

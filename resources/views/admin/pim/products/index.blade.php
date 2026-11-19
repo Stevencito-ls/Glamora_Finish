@@ -5,9 +5,6 @@
 @section('page_subtitle', 'Catálogo maestro con registro sanitario DIGEMID NSOC, tonos hexadecimales, puntos de reorden y escalas de precio.')
 
 @section('header_actions')
-    <a href="{{ route('admin.pim.catalog-pdf') }}" class="btn btn-sm btn-outline-dark rounded-pill px-3 text-xs font-semibold">
-        <i class="fas fa-file-pdf mr-1 text-danger"></i> Descargar Catálogo PDF
-    </a>
     @can('catalog.create')
         <a href="{{ route('admin.pim.products.create') }}" class="btn-glamora-primary py-2 px-4 text-xs">
             + Nuevo Producto

@@ -117,7 +117,7 @@
         }"
         @mouseenter="paused = true"
         @mouseleave="paused = false"
-        class="relative overflow-hidden border-b border-glamora-blush/35 bg-glamora-hero"
+        class="relative overflow-hidden border-b border-glamora-blush/35 bg-gradient-to-br from-[#FAF6F2] via-[#F7EDE5] to-[#EFE0D5]"
     >
         <div class="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8 lg:py-16">
             <div class="grid items-center gap-10 lg:grid-cols-12">
@@ -332,7 +332,6 @@
                 @include('storefront.partials.product-card', [
                     'product' => $product,
                     'pricingTier' => $pricingTier,
-                    'badges' => $productBadges[$product->id] ?? [],
                 ])
             @endforeach
         </div>

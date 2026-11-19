@@ -61,7 +61,7 @@
 @endpush
 
 @section('content')
-    <section class="border-b border-glamora-blush/35 bg-glamora-hero">
+    <section class="border-b border-glamora-blush/35 bg-gradient-to-r from-[#FAF6F2] via-white to-[#F7ECE4]">
         <div class="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
             <nav aria-label="Breadcrumb" class="mb-3 flex items-center gap-2 text-xs text-glamora-muted">
                 <a href="{{ route('home') }}" class="hover:text-glamora-terracotta">Inicio</a>
@@ -102,19 +102,6 @@
                 </div>
 
                 <div class="flex flex-wrap items-center gap-3">
-                    <a
-                        href="{{ route('catalog.pdf', array_filter([
-                            'categoria' => $initialCategory ?: null,
-                            'marca' => $initialBrand ?: null,
-                            'b2b' => $initialOnlyB2b ? 1 : null,
-                        ])) }}"
-                        class="btn-glamora-outline px-4 py-2 text-xs uppercase tracking-wider"
-                    >
-                        <svg class="h-4 w-4 text-glamora-terracotta" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 10.5v6m0 0-3-3m3 3 3-3m2 8.25H7a2.25 2.25 0 0 1-2.25-2.25V5.25A2.25 2.25 0 0 1 7 3h5.586a1 1 0 0 1 .707.293l4.414 4.414a1 1 0 0 1 .293.707V19.5a2.25 2.25 0 0 1-2.25 2.25Z" />
-                        </svg>
-                        Descargar Catálogo PDF
-                    </a>
                     <a href="{{ route('wholesale.index') }}" class="badge-glamora-gold">
                         Escala B2B hasta 30% OFF
                     </a>

@@ -81,37 +81,9 @@ class CartCounterDrawer extends Component
         $this->dispatch('swal:toast', title: 'Tu Bolsa de compras fue vaciada.', icon: 'info');
     }
 
-    public function quickAddCrossSell(int $variantId): void
-    {
-        $variant = ProductVariant::query()
-            ->with(['product.brand', 'tieredPrices', 'batches'])
-            ->find($variantId);
-
-        if (! $variant instanceof ProductVariant) {
-            $this->dispatch('swal:toast', title: 'No se encontró la variante sugerida.', icon: 'error');
-
-            return;
-        }
-
-        $result = app(CartSessionService::class)->addVariant($variant, 1);
-
-        $this->dispatch(
-            'swal:toast',
-            title: $result['message'],
-            icon: $result['added'] ? 'success' : 'warning',
-            productName: "{$variant->product->name} — {$variant->shade_name}"
-        );
-
-        if ($result['added']) {
-            $this->dispatch('cart-updated', openDrawer: false);
-        }
-    }
-
     public function render(): View
     {
         $summary = app(CartSessionService::class)->summary();
-        $crossSellProducts = app(CrossSellService::class)->recommendForCart($summary['items'], 3);
-        $settingService = app(SettingService::class);
 
         return view('livewire.storefront.cart-counter-drawer', [
             'items' => $summary['items'],
@@ -124,8 +96,6 @@ class CartCounterDrawer extends Component
             'total' => $summary['total'],
             'activeTier' => $summary['tier'],
             'freeShippingThreshold' => $summary['free_shipping_threshold'],
-            'crossSellProducts' => $crossSellProducts,
-            'whatsappCheckoutEnabled' => $settingService->whatsappCheckoutEnabled(),
         ]);
     }
 }

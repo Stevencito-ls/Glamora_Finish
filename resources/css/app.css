@@ -19,21 +19,6 @@
         'Segoe UI Symbol', 'Noto Color Emoji';
 }
 
-:root {
-    --glamora-hero-from: #FAF6F2;
-    --glamora-hero-via: #F7EDE5;
-    --glamora-hero-to: #EFE0D5;
-}
-
-@keyframes glamora-shimmer {
-    0% {
-        background-position: 200% 0;
-    }
-    100% {
-        background-position: -200% 0;
-    }
-}
-
 @layer base {
     html {
         scroll-behavior: smooth;
@@ -115,72 +100,4 @@
     .prose-glamora p {
         @apply mb-4 text-base leading-relaxed text-glamora-charcoal/85;
     }
-
-    .bg-glamora-hero {
-        background-image: linear-gradient(135deg, var(--glamora-hero-from), var(--glamora-hero-via), var(--glamora-hero-to));
-    }
-
-    .skeleton-glamora {
-        background-color: #F3ECE4;
-        background-image: linear-gradient(90deg, #F3ECE4 0%, #FAF6F2 48%, #F3ECE4 100%);
-        background-size: 200% 100%;
-        animation: glamora-shimmer 1.5s infinite ease-in-out;
-    }
-}
-
-/* Contraste completo para tema Noir & Gold */
-[data-theme="noir_gold"] .bg-white {
-    background-color: #FFFFFF;
-    color: #181512;
-}
-
-[data-theme="noir_gold"] .card-glamora,
-[data-theme="noir_gold"] .card-glamora-hover {
-    border-color: rgba(212, 175, 55, 0.35);
-    background-color: #FFFFFF;
-    color: #181512;
-}
-
-[data-theme="noir_gold"] .input-glamora {
-    border-color: rgba(24, 21, 18, 0.25);
-    background-color: #FFFFFF;
-    color: #181512;
-}
-
-[data-theme="noir_gold"] .input-glamora:focus {
-    border-color: #9E7B2F;
-    box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.28);
-}
-
-[data-theme="noir_gold"] .btn-glamora-primary {
-    background-color: #181512;
-    color: #F7F4EF;
-    border: 1px solid rgba(212, 175, 55, 0.45);
-}
-
-[data-theme="noir_gold"] .btn-glamora-primary:hover {
-    background-color: #9E7B2F;
-    color: #FFFFFF;
-}
-
-[data-theme="noir_gold"] .btn-glamora-terracotta {
-    background-color: #9E7B2F;
-    color: #FFFFFF;
-}
-
-[data-theme="noir_gold"] .btn-glamora-terracotta:hover {
-    background-color: #181512;
-    color: #D4AF37;
-}
-
-[data-theme="noir_gold"] .btn-glamora-outline {
-    border-color: rgba(24, 21, 18, 0.35);
-    background-color: #FFFFFF;
-    color: #181512;
-}
-
-[data-theme="noir_gold"] .btn-glamora-outline:hover {
-    border-color: #181512;
-    background-color: #181512;
-    color: #F7F4EF;
 }
