@@ -1,0 +1,31 @@
+<?php
+
+declare(strict_types=1);
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::create('newsletter_subscribers', function (Blueprint $table): void {
+            $table->id();
+            $table->string('email', 150)->unique();
+            $table->string('name', 120)->nullable();
+            $table->string('segment', 50)->default('general')->index();
+            $table->string('opt_in_token', 100)->nullable()->unique();
+            $table->boolean('is_verified')->default(false)->index();
+            $table->boolean('is_active')->default(true)->index();
+            $table->timestamp('subscribed_at')->nullable();
+            $table->timestamp('unsubscribed_at')->nullable();
+            $table->timestamps();
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::dropIfExists('newsletter_subscribers');
+    }
+};

@@ -1,0 +1,14 @@
+User-agent: *
+Allow: /
+
+Disallow: /admin
+Disallow: /mi-cuenta
+Disallow: /bolsa
+Disallow: /carrito
+Disallow: /checkout
+Disallow: /login
+Disallow: /registro
+Disallow: /2fa
+Disallow: /livewire/
+
+Sitemap: /sitemap.xml
