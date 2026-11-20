@@ -6,20 +6,24 @@ namespace App\Http\Controllers\Admin;
 
 use App\Enums\OrderStatus;
 use App\Http\Controllers\Controller;
+use App\Models\Announcement;
 use App\Models\InventoryMovement;
 use App\Models\Order;
 use App\Models\OrderReturn;
 use App\Models\Product;
 use App\Models\ProductBatch;
+use App\Models\ProductReview;
 use App\Models\User;
 use App\Models\WholesaleProfile;
+use App\Services\SettingService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class DashboardController extends Controller
 {
-    public function index(): View
+    public function index(SettingService $settingService): View
     {
         /** @var User $user */
         $user = Auth::user();
@@ -224,6 +228,63 @@ class DashboardController extends Controller
         }
         $pendingWholesaleCount = $user->can('wholesale.view') ? (int) (clone $wholesaleBase)->count() : 0;
 
+        $pendingReviewsCount = ($user->can('reviews.moderate') && Schema::hasTable('product_reviews'))
+            ? (int) ProductReview::query()->pending()->count()
+            : 0;
+
+        $onboarding = null;
+        if ($user->hasAnyRole(['SuperAdmin', 'Administrador']) && ! $settingService->bool('onboarding_dismissed', false)) {
+            $steps = [
+                [
+                    'key' => 'identity',
+                    'title' => 'Identidad White-Label & Tema',
+                    'description' => 'Personaliza el nombre comercial, logotipo, RUC y paleta visual de la tienda.',
+                    'completed' => $settingService->logoUrl() !== null
+                        || $settingService->activeThemeKey() !== 'glamora_nude'
+                        || $settingService->string('store_ruc') !== '',
+                    'url' => route('admin.settings.index'),
+                    'cta' => 'Configurar tienda',
+                ],
+                [
+                    'key' => 'catalog',
+                    'title' => 'Catálogo & Inventario FEFO',
+                    'description' => 'Mantén productos activos, variantes con colorimetría y lotes vigentes.',
+                    'completed' => Product::query()->active()->exists() && ProductBatch::query()->available()->exists(),
+                    'url' => route('admin.pim.products.index'),
+                    'cta' => 'Revisar catálogo',
+                ],
+                [
+                    'key' => 'engagement',
+                    'title' => 'Anuncios & Canal WhatsApp',
+                    'description' => 'Activa la barra de anuncios dinámicos y la atención comercial por WhatsApp.',
+                    'completed' => Schema::hasTable('announcements')
+                        && Announcement::query()->activeNow()->exists()
+                        && $settingService->whatsappNumber() !== '',
+                    'url' => route('admin.announcements.index'),
+                    'cta' => 'Gestionar anuncios',
+                ],
+                [
+                    'key' => 'reviews',
+                    'title' => 'Reseñas & Operación Verificada',
+                    'description' => 'Modera opiniones de clientes y valida el flujo de pedidos FEFO.',
+                    'completed' => Schema::hasTable('product_reviews')
+                        && ProductReview::query()->approved()->exists()
+                        && Order::query()->exists(),
+                    'url' => route('admin.reviews.index'),
+                    'cta' => 'Moderar reseñas',
+                ],
+            ];
+
+            $completedCount = count(array_filter($steps, static fn (array $step): bool => (bool) $step['completed']));
+
+            $onboarding = [
+                'completed_count' => $completedCount,
+                'total_steps' => count($steps),
+                'progress_percent' => (int) round(($completedCount / count($steps)) * 100),
+                'steps' => $steps,
+            ];
+        }
+
         return view('admin.dashboard', [
             'user' => $user,
             'isOpsStaff' => $isOpsStaff,
@@ -235,6 +296,8 @@ class DashboardController extends Controller
             'toDispatchCount' => $toDispatchCount,
             'pendingRmasCount' => $pendingRmasCount,
             'pendingWholesaleCount' => $pendingWholesaleCount,
+            'pendingReviewsCount' => $pendingReviewsCount,
+            'onboarding' => $onboarding,
             'recentActionableOrders' => $recentActionableOrders,
         ]);
     }

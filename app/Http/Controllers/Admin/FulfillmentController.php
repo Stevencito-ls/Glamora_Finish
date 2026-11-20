@@ -16,6 +16,7 @@ use App\Models\ProductVariant;
 use App\Models\User;
 use App\Models\WholesaleProfile;
 use App\Services\FefoService;
+use App\Services\SettingService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
@@ -426,7 +427,7 @@ class FulfillmentController extends Controller
             ->with('admin_success', "Estado del pedido {$order->order_number} actualizado a «{$targetStatus->label()}».");
     }
 
-    public function dispatchGuidePdf(Order $order): Response
+    public function dispatchGuidePdf(Order $order, SettingService $settingService): Response
     {
         $this->authorize('downloadDispatchGuide', $order);
 
@@ -442,6 +443,7 @@ class FulfillmentController extends Controller
         $pdf = Pdf::loadView('pdf.dispatch-guide', [
             'order' => $order,
             'batchLookup' => $batchLookup,
+            'settings' => $settingService->all(),
         ])->setPaper('a4', 'portrait');
 
         return $pdf->download("Guia-Picking-{$order->order_number}.pdf");

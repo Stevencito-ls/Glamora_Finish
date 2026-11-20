@@ -148,6 +148,15 @@
     </style>
 </head>
 <body>
+    @php
+        $pdfSettings = is_array($settings ?? null) ? $settings : app(\App\Services\SettingService::class)->all();
+        $storeName = trim((string) ($pdfSettings['store_name'] ?? '')) ?: 'Glamora Perú';
+        $storeTagline = trim((string) ($pdfSettings['store_tagline'] ?? '')) ?: 'Alta Cosmética Botánica & Distribución B2B';
+        $storeRuc = trim((string) ($pdfSettings['store_ruc'] ?? '')) ?: '20608945123';
+        $storeEmail = trim((string) ($pdfSettings['store_email'] ?? '')) ?: 'info.glamora@gmail.com';
+        $storePhone = trim((string) ($pdfSettings['store_phone'] ?? '')) ?: '+51 917 328 085';
+        $storeAddress = trim((string) ($pdfSettings['store_address'] ?? '')) ?: 'Almacén Central: Lima Metropolitana, Perú (Envíos a todo el país vía Olva y Shalom)';
+    @endphp
     <table class="header-table">
         <tr>
             <td style="width: 60%; vertical-align: middle;">
@@ -156,12 +165,12 @@
                         <td style="padding-right: 10px; vertical-align: middle;">
                             <svg width="38" height="38" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
                                 <circle cx="20" cy="20" r="19" fill="#2B2523" stroke="#D4AF37" stroke-width="1.5"/>
-                                <text x="20" y="26" text-anchor="middle" font-size="18" font-weight="bold" fill="#D4AF37">G</text>
+                                <text x="20" y="26" text-anchor="middle" font-size="18" font-weight="bold" fill="#D4AF37">{{ strtoupper(mb_substr($storeName, 0, 1) ?: 'G') }}</text>
                             </svg>
                         </td>
                         <td style="vertical-align: middle;">
-                            <div class="brand-title">GLAMORA</div>
-                            <div class="brand-sub">Perú · Alta Cosmética Botánica &amp; Distribución B2B</div>
+                            <div class="brand-title">{{ mb_strtoupper($storeName) }}</div>
+                            <div class="brand-sub">{{ $storeTagline }}</div>
                         </td>
                     </tr>
                 </table>
@@ -182,9 +191,9 @@
         <tr>
             <td class="meta-box" style="width: 49%;">
                 <div class="meta-heading">Emisor &amp; Respaldo Sanitario</div>
-                <strong>Glamora Perú S.A.C.</strong> · RUC 20608841920<br>
-                Av. Los Frutales 412, Ate · Showroom Miraflores, Lima<br>
-                ventas@glamora.pe · +51 987 654 321<br>
+                <strong>Glamora Perú S.A.C.</strong> · RUC {{ $storeRuc }}<br>
+                {{ $storeAddress }}<br>
+                {{ $storeEmail }} · {{ $storePhone }}<br>
                 Control FEFO por lote &amp; Registro NSOC DIGEMID
             </td>
             <td style="width: 2%;"></td>

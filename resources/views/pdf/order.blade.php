@@ -142,6 +142,13 @@
 </head>
 <body>
     @php
+        $pdfSettings = is_array($settings ?? null) ? $settings : app(\App\Services\SettingService::class)->all();
+        $storeName = trim((string) ($pdfSettings['store_name'] ?? '')) ?: 'Glamora Perú';
+        $storeRuc = trim((string) ($pdfSettings['store_ruc'] ?? '')) ?: '20608945123';
+        $storeEmail = trim((string) ($pdfSettings['store_email'] ?? '')) ?: 'info.glamora@gmail.com';
+        $storePhone = trim((string) ($pdfSettings['store_phone'] ?? '')) ?: '+51 917 328 085';
+        $storeAddress = trim((string) ($pdfSettings['store_address'] ?? '')) ?: 'Almacén Central: Lima Metropolitana, Perú (Envíos a todo el país vía Olva y Shalom)';
+
         $netSubtotal = max(0.0, (float) $order->subtotal - (float) $order->discount_amount);
         $taxableBase = round($netSubtotal - (float) $order->tax_igv, 2);
         $primaryPayment = $order->payments->first();
@@ -302,7 +309,8 @@
     </table>
 
     <div class="footer-note">
-        Glamora Perú S.A.C. · RUC 20608841920 · Consulta el estado de tu despacho en /seguimiento con el código {{ $order->order_number }}.
+        Glamora Perú S.A.C. ({{ $storeName }}) · RUC {{ $storeRuc }} · {{ $storeAddress }} · {{ $storeEmail }} · {{ $storePhone }}<br>
+        Consulta el estado de tu despacho en /seguimiento con el código {{ $order->order_number }}.
     </div>
 </body>
 </html>

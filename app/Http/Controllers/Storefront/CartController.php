@@ -7,6 +7,8 @@ namespace App\Http\Controllers\Storefront;
 use App\Http\Controllers\Controller;
 use App\Models\ProductVariant;
 use App\Services\CartSessionService;
+use App\Services\CrossSellService;
+use App\Services\SettingService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
@@ -17,9 +19,15 @@ use Illuminate\Support\Facades\Auth;
 
 class CartController extends Controller
 {
-    public function index(CartSessionService $cartService): View
-    {
+    public function index(
+        CartSessionService $cartService,
+        CrossSellService $crossSellService,
+        SettingService $settingService,
+    ): View {
         $summary = $cartService->summary();
+        $recommendations = $crossSellService->recommendationsForCart($summary['items'], 3);
+        $bestsellerIds = $crossSellService->bestsellerIds();
+        $productBadges = $crossSellService->badgesFor($recommendations, $bestsellerIds);
 
         return view('storefront.cart.index', [
             'items' => $summary['items'],
@@ -33,12 +41,18 @@ class CartController extends Controller
             'couponDiscount' => $summary['coupon_discount'],
             'couponWarning' => $summary['coupon_warning'],
             'netSubtotal' => $summary['net_subtotal'],
+            'taxRate' => $summary['tax_rate'],
+            'taxPercent' => $summary['tax_percent'],
             'taxableBase' => $summary['taxable_base'],
             'taxIgv' => $summary['tax_igv'],
             'shippingQuote' => $summary['shipping_quote'],
             'shippingCost' => $summary['shipping_cost'],
             'total' => $summary['total'],
             'freeShippingThreshold' => $summary['free_shipping_threshold'],
+            'recommendations' => $recommendations,
+            'productBadges' => $productBadges,
+            'whatsappCartUrl' => $settingService->buildCartWhatsappUrl($summary, Auth::user()?->name),
+            'whatsappCheckoutEnabled' => $settingService->bool('whatsapp_checkout_enabled', true),
         ]);
     }
 
@@ -183,7 +197,7 @@ class CartController extends Controller
             ->with('cart_success', 'Cupón promocional retirado.');
     }
 
-    public function quotePdf(CartSessionService $cartService): Response|RedirectResponse
+    public function quotePdf(CartSessionService $cartService, SettingService $settingService): Response|RedirectResponse
     {
         $summary = $cartService->summary();
 
@@ -203,6 +217,7 @@ class CartController extends Controller
             'validUntil' => $validUntil,
             'customer' => Auth::user(),
             'summary' => $summary,
+            'settings' => $settingService->all(),
         ])->setPaper('a4', 'portrait');
 
         return $pdf->download("Cotizacion-Glamora-{$quoteNumber}.pdf");

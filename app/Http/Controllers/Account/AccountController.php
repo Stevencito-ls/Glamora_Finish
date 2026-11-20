@@ -14,6 +14,7 @@ use App\Models\ReturnItem;
 use App\Models\SecurityLog;
 use App\Models\User;
 use App\Models\UserAddress;
+use App\Services\SettingService;
 use App\Services\TotpService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Closure;
@@ -115,12 +116,13 @@ class AccountController extends Controller
         ]);
     }
 
-    public function orderPdf(string $orderNumber): Response
+    public function orderPdf(string $orderNumber, SettingService $settingService): Response
     {
         $order = $this->resolveOwnedOrder($orderNumber);
 
         $pdf = Pdf::loadView('pdf.order', [
             'order' => $order,
+            'settings' => $settingService->all(),
         ])->setPaper('a4', 'portrait');
 
         return $pdf->download("Pedido-Glamora-{$order->order_number}.pdf");

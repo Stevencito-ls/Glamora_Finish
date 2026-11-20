@@ -85,6 +85,16 @@ class Product extends Model
             ->withTimestamps();
     }
 
+    public function reviews(): HasMany
+    {
+        return $this->hasMany(ProductReview::class);
+    }
+
+    public function approvedReviews(): HasMany
+    {
+        return $this->hasMany(ProductReview::class)->approved()->latest('id');
+    }
+
     public function totalAvailableStock(): int
     {
         if ($this->relationLoaded('variants')) {

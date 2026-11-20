@@ -68,7 +68,7 @@
                             name="phone"
                             value="{{ old('phone') }}"
                             required
-                            placeholder="+51 987 654 321"
+                            placeholder="+51 917 328 085"
                             class="input-glamora"
                         >
                         @error('phone')

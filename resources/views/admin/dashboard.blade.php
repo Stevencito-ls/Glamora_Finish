@@ -5,7 +5,77 @@
 @section('page_subtitle', 'Resumen ejecutivo de ventas, margen bruto, control de lotes FEFO y atención de pedidos.')
 
 @section('content')
-    <div class="space-y-6">
+    <div class="d-flex flex-column gap-4">
+        @if ($onboarding !== null)
+            <section class="card border-0 shadow-sm mb-0">
+                <div class="card-header bg-white d-flex flex-wrap align-items-center justify-content-between gap-3 py-3 px-4 border-bottom">
+                    <div>
+                        <span class="badge bg-warning text-dark mb-1">
+                            <i class="fas fa-wand-magic-sparkles me-1"></i> Asistente Inicial Glamora PRO
+                        </span>
+                        <h2 class="h5 mb-0 fw-bold text-dark">
+                            Configuración inicial de tu tienda ({{ $onboarding['completed_count'] }}/{{ $onboarding['total_steps'] }} completados)
+                        </h2>
+                    </div>
+
+                    <div class="d-flex align-items-center gap-3">
+                        <div style="min-width: 150px;">
+                            <div class="d-flex justify-content-between small text-muted mb-1">
+                                <span>Progreso</span>
+                                <strong class="text-dark">{{ $onboarding['progress_percent'] }}%</strong>
+                            </div>
+                            <div class="progress" style="height: 8px;">
+                                <div
+                                    class="progress-bar bg-success"
+                                    role="progressbar"
+                                    style="width: {{ $onboarding['progress_percent'] }}%;"
+                                    aria-valuenow="{{ $onboarding['progress_percent'] }}"
+                                    aria-valuemin="0"
+                                    aria-valuemax="100"
+                                ></div>
+                            </div>
+                        </div>
+
+                        <form action="{{ route('admin.settings.onboarding-dismiss') }}" method="POST">
+                            @csrf
+                            <button type="submit" class="btn btn-sm btn-outline-secondary rounded-pill px-3">
+                                <i class="fas fa-eye-slash me-1"></i> Ocultar guía
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="card-body p-4">
+                    <div class="row g-3">
+                        @foreach ($onboarding['steps'] as $step)
+                            <div class="col-12 col-md-6 col-xl-3">
+                                <div class="card h-100 mb-0 border {{ $step['completed'] ? 'border-success bg-light' : 'border-warning' }}">
+                                    <div class="card-body d-flex flex-column p-3">
+                                        <div class="d-flex align-items-center justify-content-between mb-2">
+                                            @if ($step['completed'])
+                                                <span class="badge bg-success">
+                                                    <i class="fas fa-check me-1"></i> Completado
+                                                </span>
+                                            @else
+                                                <span class="badge bg-warning text-dark">
+                                                    <i class="fas fa-clock me-1"></i> Pendiente
+                                                </span>
+                                            @endif
+                                        </div>
+                                        <h3 class="h6 fw-bold text-dark mb-1">{{ $step['title'] }}</h3>
+                                        <p class="small text-muted mb-3 flex-grow-1">{{ $step['description'] }}</p>
+                                        <a href="{{ $step['url'] }}" class="btn btn-sm {{ $step['completed'] ? 'btn-outline-success' : 'btn-dark' }} rounded-pill w-100">
+                                            {{ $step['cta'] }} &rarr;
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+            </section>
+        @endif
+
         {{-- Top AdminLTE Small-Box KPI Cards --}}
         <section class="row g-3">
             @can('reports.view')
@@ -66,7 +136,7 @@
                             <p class="mb-1 text-xs font-bold uppercase tracking-wider text-dark">
                                 Rotación de Inventario
                             </p>
-                            <small class="text-dark/75 text-xs">
+                            <small class="text-dark opacity-75 text-xs">
                                 Salidas: <strong>{{ $inventoryKpis['units_out_30d'] }} uds.</strong> /
                                 Stock prom.: <strong>{{ number_format($inventoryKpis['average_stock'], 0) }} uds.</strong>
                             </small>
@@ -163,11 +233,12 @@
         </section>
 
         {{-- Alerts & Queues Detail Grid --}}
-        <div class="grid gap-6 xl:grid-cols-2">
+        <div class="row g-4">
             @can('inventory.view')
                 {{-- FEFO Expiring Batches --}}
-                <section class="card card-outline card-warning mb-0 overflow-hidden">
-                    <div class="card-header flex items-center justify-between bg-white px-5 py-3.5">
+                <div class="col-12 col-xl-6">
+                <section class="card card-outline card-warning mb-0 h-100 overflow-hidden">
+                    <div class="card-header d-flex align-items-center justify-content-between flex-wrap gap-2 bg-white px-4 py-3">
                         <div>
                             <h2 class="card-title m-0 font-serif text-xl font-semibold text-glamora-charcoal">
                                 <i class="fas fa-calendar-check mr-1.5 text-warning"></i>
@@ -180,7 +251,7 @@
                         </a>
                     </div>
 
-                    <div class="card-body p-0 overflow-x-auto bg-white">
+                    <div class="card-body p-0 table-responsive bg-white">
                         @if ($expiringBatches->isEmpty())
                             <div class="p-6 text-center text-sm text-glamora-muted">
                                 Sin lotes activos por vencer en los próximos 60 días.
@@ -229,10 +300,12 @@
                         @endif
                     </div>
                 </section>
+                </div>
 
                 {{-- Low Stock / Reorder Point Products --}}
-                <section class="card card-outline card-danger mb-0 overflow-hidden">
-                    <div class="card-header flex items-center justify-between bg-white px-5 py-3.5">
+                <div class="col-12 col-xl-6">
+                <section class="card card-outline card-danger mb-0 h-100 overflow-hidden">
+                    <div class="card-header d-flex align-items-center justify-content-between flex-wrap gap-2 bg-white px-4 py-3">
                         <div>
                             <h2 class="card-title m-0 font-serif text-xl font-semibold text-glamora-charcoal">
                                 <i class="fas fa-triangle-exclamation mr-1.5 text-danger"></i>
@@ -245,7 +318,7 @@
                         </a>
                     </div>
 
-                    <div class="card-body p-0 overflow-x-auto bg-white">
+                    <div class="card-body p-0 table-responsive bg-white">
                         @if ($lowStockAlerts->isEmpty())
                             <div class="p-6 text-center text-sm text-glamora-muted">
                                 Todos los productos activos superan su punto de reorden.
@@ -295,13 +368,14 @@
                         @endif
                     </div>
                 </section>
+                </div>
             @endcan
         </div>
 
         {{-- Actionable Orders Queue --}}
         @can('orders.view')
             <section class="card card-outline card-primary mb-0 overflow-hidden">
-                <div class="card-header flex items-center justify-between bg-white px-5 py-3.5">
+                <div class="card-header d-flex align-items-center justify-content-between flex-wrap gap-2 bg-white px-4 py-3">
                     <div>
                         <h2 class="card-title m-0 font-serif text-xl font-semibold text-glamora-charcoal">
                             <i class="fas fa-shopping-bag mr-1.5 text-glamora-terracotta"></i>

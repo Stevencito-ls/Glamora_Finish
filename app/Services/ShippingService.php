@@ -7,6 +7,7 @@ namespace App\Services;
 use App\Enums\ShippingMethod;
 use App\ValueObjects\MoneyAmount;
 use App\ValueObjects\ShippingQuote;
+use Throwable;
 
 class ShippingService
 {
@@ -14,9 +15,19 @@ class ShippingService
 
     public const string DEFAULT_CURRENCY = 'PEN';
 
+    public function __construct(
+        private readonly ?SettingService $settingService = null,
+    ) {}
+
     public function freeShippingThreshold(): float
     {
-        return self::FREE_SHIPPING_THRESHOLD;
+        try {
+            $settings = $this->settingService ?? app(SettingService::class);
+
+            return $settings->freeShippingThreshold();
+        } catch (Throwable) {
+            return self::FREE_SHIPPING_THRESHOLD;
+        }
     }
 
     public function resolveMethod(?string $method): ShippingMethod

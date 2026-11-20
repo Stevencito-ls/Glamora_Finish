@@ -5,6 +5,7 @@
 @section('canonical_url', route('product.show', $product->slug))
 @section('og_type', 'product')
 @section('og_image', $galleryImages[0] ?? $product->image_url)
+@section('whatsapp_message', "Hola, tengo una consulta sobre el producto {$product->name} ({$product->brand?->name}).")
 
 @push('structured_data')
     @php
@@ -136,7 +137,7 @@
                 return Number(this.current.base_price);
             }
         }"
-        class="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8"
+        class="mx-auto max-w-7xl px-4 pt-10 pb-24 md:pb-10 sm:px-6 lg:px-8"
     >
         {{-- Breadcrumb --}}
         <nav aria-label="Breadcrumb" class="mb-6 flex flex-wrap items-center gap-2 text-xs text-glamora-muted">
@@ -227,6 +228,13 @@
                     <h1 class="mt-2 font-serif text-3xl font-semibold leading-tight text-glamora-charcoal sm:text-4xl">
                         {{ $product->name }}
                     </h1>
+
+                    @if (($reviewsCount ?? 0) > 0)
+                        <a href="#resenas" class="mt-2 inline-flex items-center gap-2 text-xs text-glamora-muted hover:text-glamora-terracotta">
+                            <span class="font-bold text-amber-500">&#9733; {{ number_format((float) $averageRating, 1) }}</span>
+                            <span>({{ $reviewsCount }} {{ $reviewsCount === 1 ? 'reseña verificada' : 'reseñas verificadas' }})</span>
+                        </a>
+                    @endif
 
                     <p class="mt-3 text-sm leading-relaxed text-glamora-muted">
                         {{ $product->short_description }}
@@ -483,12 +491,225 @@
             </div>
         </section>
 
-        {{-- Related Products --}}
-        @if ($relatedProducts->isNotEmpty())
-            <section class="mt-16">
+        {{-- Reseñas Verificadas (#resenas) --}}
+        <section id="resenas" class="mt-14 card-glamora p-6 sm:p-8">
+            <div class="flex flex-wrap items-end justify-between gap-4 border-b border-glamora-blush/35 pb-5">
+                <div>
+                    <span class="text-xs font-bold uppercase tracking-[0.2em] text-glamora-terracotta">Opiniones de la comunidad</span>
+                    <h2 class="mt-1 font-serif text-3xl font-semibold text-glamora-charcoal">
+                        Reseñas Verificadas
+                    </h2>
+                </div>
+                <div class="flex items-center gap-3">
+                    <span class="font-serif text-4xl font-bold text-glamora-charcoal">
+                        {{ number_format((float) ($averageRating ?? 0), 1) }}
+                    </span>
+                    <div class="text-xs text-glamora-muted">
+                        <div class="text-amber-500">
+                            @for ($s = 1; $s <= 5; $s++)
+                                <span>{{ $s <= round((float) ($averageRating ?? 0)) ? '★' : '☆' }}</span>
+                            @endfor
+                        </div>
+                        <span>{{ $reviewsCount ?? 0 }} {{ ($reviewsCount ?? 0) === 1 ? 'opinión aprobada' : 'opiniones aprobadas' }}</span>
+                    </div>
+                </div>
+            </div>
+
+            @if (session('review_success'))
+                <div class="mt-5 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-900">
+                    {{ session('review_success') }}
+                </div>
+            @endif
+
+            @if (session('review_error'))
+                <div class="mt-5 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-900">
+                    {{ session('review_error') }}
+                </div>
+            @endif
+
+            <div class="mt-6 grid gap-8 lg:grid-cols-12">
+                {{-- Left: Rating Distribution + Review Form --}}
+                <div class="space-y-6 lg:col-span-5">
+                    <div class="rounded-2xl border border-glamora-blush/30 bg-glamora-cream/65 p-5 space-y-2.5">
+                        @foreach (($ratingDistribution ?? []) as $star => $dist)
+                            <div class="flex items-center gap-3 text-xs">
+                                <span class="w-12 shrink-0 font-semibold text-glamora-charcoal">{{ $star }} &#9733;</span>
+                                <div class="h-2 flex-1 overflow-hidden rounded-full bg-white">
+                                    <div class="h-full rounded-full bg-glamora-gold" style="width: {{ (int) ($dist['percent'] ?? 0) }}%"></div>
+                                </div>
+                                <span class="w-8 shrink-0 text-right font-mono text-glamora-muted">{{ (int) ($dist['count'] ?? 0) }}</span>
+                            </div>
+                        @endforeach
+                    </div>
+
+                    @auth
+                        @if ($canSubmitReview ?? false)
+                            <form action="{{ route('product.reviews.store', $product->slug) }}" method="POST" class="rounded-2xl border border-glamora-blush/35 bg-white p-5 space-y-4">
+                                @csrf
+                                <div class="flex items-center justify-between gap-2">
+                                    <h3 class="font-serif text-xl font-semibold text-glamora-charcoal">
+                                        Comparte tu experiencia
+                                    </h3>
+                                    @if ($userHasVerifiedPurchase ?? false)
+                                        <span class="rounded-full bg-emerald-50 px-2.5 py-0.5 text-[10px] font-bold text-emerald-700">
+                                            Compra Verificada
+                                        </span>
+                                    @endif
+                                </div>
+
+                                <div>
+                                    <label for="review_rating" class="mb-1 block text-xs font-semibold text-glamora-charcoal">Calificación *</label>
+                                    <select id="review_rating" name="rating" required class="input-glamora">
+                                        @for ($r = 5; $r >= 1; $r--)
+                                            <option value="{{ $r }}" @selected((int) old('rating', 5) === $r)>
+                                                {{ $r }} {{ $r === 1 ? 'estrella' : 'estrellas' }}
+                                            </option>
+                                        @endfor
+                                    </select>
+                                    @error('rating')
+                                        <p class="mt-1 text-xs text-rose-700">{{ $message }}</p>
+                                    @enderror
+                                </div>
+
+                                @if ($product->variants->isNotEmpty())
+                                    <div>
+                                        <label for="review_shade" class="mb-1 block text-xs font-semibold text-glamora-charcoal">Tono / Presentación (opcional)</label>
+                                        <select id="review_shade" name="shade_purchased" class="input-glamora">
+                                            <option value="">Seleccionar tono...</option>
+                                            @foreach ($product->variants as $v)
+                                                <option value="{{ $v->shade_name }}" @selected(old('shade_purchased') === $v->shade_name)>
+                                                    {{ $v->shade_name }}
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                @endif
+
+                                <div>
+                                    <label for="review_title" class="mb-1 block text-xs font-semibold text-glamora-charcoal">Título breve (opcional)</label>
+                                    <input id="review_title" type="text" name="title" value="{{ old('title') }}" placeholder="Ej. Acabado aterciopelado increíble" class="input-glamora">
+                                    @error('title')
+                                        <p class="mt-1 text-xs text-rose-700">{{ $message }}</p>
+                                    @enderror
+                                </div>
+
+                                <div>
+                                    <label for="review_comment" class="mb-1 block text-xs font-semibold text-glamora-charcoal">Tu opinión *</label>
+                                    <textarea id="review_comment" name="comment" rows="3" required minlength="10" placeholder="Cuéntanos sobre textura, duración o resultados..." class="input-glamora">{{ old('comment') }}</textarea>
+                                    @error('comment')
+                                        <p class="mt-1 text-xs text-rose-700">{{ $message }}</p>
+                                    @enderror
+                                </div>
+
+                                <button type="submit" class="btn-glamora-primary w-full py-2.5 text-xs uppercase tracking-wider">
+                                    Enviar Reseña
+                                </button>
+                            </form>
+                        @elseif (isset($userReview) && $userReview !== null)
+                            <div class="rounded-2xl border border-glamora-gold/40 bg-glamora-cream/75 p-5 text-xs text-glamora-charcoal">
+                                <p class="font-bold">Ya enviaste una reseña para este producto</p>
+                                <p class="mt-1 text-glamora-muted">
+                                    Estado actual: <strong>{{ $userReview->statusLabel() }}</strong> ({{ $userReview->rating }}/5 estrellas).
+                                </p>
+                            </div>
+                        @endif
+                    @else
+                        <div class="rounded-2xl border border-glamora-blush/35 bg-glamora-cream/70 p-5 text-xs text-glamora-muted">
+                            <p class="font-semibold text-glamora-charcoal">¿Ya probaste esta fórmula?</p>
+                            <p class="mt-1">Inicia sesión en tu cuenta Glamora para dejar tu reseña verificada.</p>
+                            <a href="{{ route('login') }}" class="btn-glamora-outline mt-3 px-4 py-2 text-xs">
+                                Iniciar Sesión para Reseñar
+                            </a>
+                        </div>
+                    @endauth
+                </div>
+
+                {{-- Right: Approved Reviews List --}}
+                <div class="space-y-4 lg:col-span-7">
+                    @forelse (($reviews ?? collect()) as $review)
+                        <article class="rounded-2xl border border-glamora-blush/30 bg-white p-5">
+                            <div class="flex flex-wrap items-center justify-between gap-2">
+                                <div class="flex items-center gap-2.5">
+                                    <span class="font-semibold text-sm text-glamora-charcoal">{{ $review->user?->name ?? 'Clienta Glamora' }}</span>
+                                    @if ($review->is_verified_purchase)
+                                        <span class="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-0.5 text-[10px] font-bold text-emerald-700">
+                                            &#10003; Compra Verificada
+                                        </span>
+                                    @endif
+                                </div>
+                                <span class="text-xs text-glamora-muted">{{ $review->created_at?->format('d/m/Y') }}</span>
+                            </div>
+
+                            <div class="mt-1.5 flex flex-wrap items-center gap-2 text-xs">
+                                <span class="text-amber-500">
+                                    @for ($s = 1; $s <= 5; $s++)
+                                        <span>{{ $s <= (int) $review->rating ? '★' : '☆' }}</span>
+                                    @endfor
+                                </span>
+                                @if ($review->shade_purchased)
+                                    <span class="rounded-full bg-glamora-cream px-2.5 py-0.5 text-[11px] text-glamora-muted">
+                                        Tono: {{ $review->shade_purchased }}
+                                    </span>
+                                @endif
+                            </div>
+
+                            @if ($review->title)
+                                <h4 class="mt-2 font-serif text-lg font-semibold text-glamora-charcoal">
+                                    {{ $review->title }}
+                                </h4>
+                            @endif
+
+                            <p class="mt-1.5 text-sm leading-relaxed text-glamora-charcoal/85">
+                                {{ $review->comment }}
+                            </p>
+                        </article>
+                    @empty
+                        <div class="rounded-2xl border border-dashed border-glamora-blush/50 bg-glamora-cream/50 p-8 text-center">
+                            <p class="font-serif text-xl font-semibold text-glamora-charcoal">
+                                Aún no hay reseñas publicadas para este producto
+                            </p>
+                            <p class="mt-1.5 text-xs text-glamora-muted">
+                                Sé la primera persona en compartir tu experiencia con esta fórmula.
+                            </p>
+                        </div>
+                    @endforelse
+                </div>
+            </div>
+        </section>
+
+        {{-- Completa tu Rutina (Cross-Sell) --}}
+        @if (isset($routineProducts) && $routineProducts->isNotEmpty())
+            <section class="mt-14">
                 <div class="mb-6 flex items-end justify-between">
                     <div>
-                        <span class="text-xs font-bold uppercase tracking-[0.2em] text-glamora-terracotta">Completa tu rutina</span>
+                        <span class="text-xs font-bold uppercase tracking-[0.2em] text-glamora-terracotta">Sinergia Botánica</span>
+                        <h2 class="mt-1 font-serif text-3xl font-semibold text-glamora-charcoal">
+                            Completa tu Rutina
+                        </h2>
+                    </div>
+                    <a href="{{ route('catalog.index') }}" class="text-xs font-semibold uppercase tracking-wider text-glamora-charcoal hover:text-glamora-terracotta">
+                        Explorar catálogo &rarr;
+                    </a>
+                </div>
+
+                <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+                    @foreach ($routineProducts as $routineProduct)
+                        @include('storefront.partials.product-card', [
+                            'product' => $routineProduct,
+                            'pricingTier' => $activeTier,
+                            'badges' => $productBadges[$routineProduct->id] ?? [],
+                        ])
+                    @endforeach
+                </div>
+            </section>
+        @endif
+
+        {{-- Related Products --}}
+        @if ($relatedProducts->isNotEmpty())
+            <section class="mt-14">
+                <div class="mb-6 flex items-end justify-between">
+                    <div>
+                        <span class="text-xs font-bold uppercase tracking-[0.2em] text-glamora-terracotta">Más de la línea</span>
                         <h2 class="mt-1 font-serif text-3xl font-semibold text-glamora-charcoal">
                             Productos relacionados
                         </h2>
@@ -503,10 +724,33 @@
                         @include('storefront.partials.product-card', [
                             'product' => $related,
                             'pricingTier' => $activeTier,
+                            'badges' => $productBadges[$related->id] ?? [],
                         ])
                     @endforeach
                 </div>
             </section>
         @endif
+
+        {{-- Sticky Mobile CTA Bar --}}
+        <div class="md:hidden fixed inset-x-0 bottom-0 z-40 border-t border-glamora-blush/40 bg-white/95 px-4 py-3 shadow-[0_-8px_24px_rgba(43,37,35,0.12)] backdrop-blur-md">
+            <form action="{{ route('cart.add') }}" method="POST" class="flex items-center justify-between gap-3">
+                @csrf
+                <input type="hidden" name="variant_id" :value="current ? current.id : ''">
+                <input type="hidden" name="quantity" :value="Math.max(1, Number(quantity) || 1)">
+
+                <div class="min-w-0">
+                    <p class="truncate text-[11px] font-semibold text-glamora-muted" x-text="(current ? current.shade_name : '') + ' · x' + Math.max(1, Number(quantity) || 1)"></p>
+                    <p class="font-serif text-xl font-bold text-glamora-charcoal" x-text="'S/ ' + (effectiveUnitPrice() * Math.max(1, Number(quantity) || 1)).toFixed(2)"></p>
+                </div>
+
+                <button
+                    type="submit"
+                    :disabled="!current || current.available_stock <= 0"
+                    class="btn-glamora-primary shrink-0 px-5 py-2.5 text-xs uppercase tracking-wider"
+                >
+                    <span x-text="current && current.available_stock > 0 ? '+ Agregar a Bolsa' : 'Agotado'"></span>
+                </button>
+            </form>
+        </div>
     </div>
 @endsection

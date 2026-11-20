@@ -22,6 +22,7 @@ class DatabaseSeeder extends Seeder
             BannerSeeder::class,
             InventorySeeder::class,
             OperationsAndMarketingSeeder::class,
+            ProFeaturesSeeder::class,
         ]);
     }
 }

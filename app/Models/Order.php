@@ -86,6 +86,11 @@ class Order extends Model
         return $this->hasMany(OrderReturn::class);
     }
 
+    public function reviews(): HasMany
+    {
+        return $this->hasMany(ProductReview::class);
+    }
+
     public function scopeStatus(Builder $query, OrderStatus $status): Builder
     {
         return $query->where('status', $status->value);

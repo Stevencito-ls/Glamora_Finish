@@ -102,6 +102,19 @@
                 </div>
 
                 <div class="flex flex-wrap items-center gap-3">
+                    @if ($catalogPdfEnabled ?? true)
+                        <a
+                            href="{{ route('catalog.pdf', array_filter(['categoria' => $activeCategory?->slug])) }}"
+                            target="_blank"
+                            rel="noopener"
+                            class="btn-glamora-outline px-4 py-2 text-xs"
+                        >
+                            <svg class="h-4 w-4 text-glamora-terracotta" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 10.5v6m0 0-3-3m3 3 3-3m2 8.25H7a2.25 2.25 0 0 1-2.25-2.25V5.25A2.25 2.25 0 0 1 7 3h5.586a1 1 0 0 1 .707.293l4.414 4.414a1 1 0 0 1 .293.707V19.5a2.25 2.25 0 0 1-2.25 2.25Z" />
+                            </svg>
+                            Descargar Catálogo PDF
+                        </a>
+                    @endif
                     <a href="{{ route('wholesale.index') }}" class="badge-glamora-gold">
                         Escala B2B hasta 30% OFF
                     </a>

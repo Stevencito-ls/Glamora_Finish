@@ -2,6 +2,7 @@
     'product',
     'pricingTier' => \App\Enums\CustomerTier::Minorista,
     'useLivewireAdd' => false,
+    'badges' => [],
 ])
 
 @php
@@ -35,6 +36,18 @@
 
     $totalStock = (int) $activeVariants->sum(fn (\App\Models\ProductVariant $v): int => $v->availableStock());
     $mainImg = $product->image_url;
+
+    $defaultWholesale = $defaultVariant
+        ? (float) ($defaultVariant->wholesale_base_price ?: $defaultVariant->priceForTier(\App\Enums\CustomerTier::Oro, 12))
+        : 0.0;
+
+    $isBestseller = (bool) ($badges['is_bestseller'] ?? false);
+    $isLowStock = array_key_exists('is_low_stock', $badges)
+        ? (bool) $badges['is_low_stock']
+        : ($totalStock > 0 && $totalStock <= max(1, (int) $product->min_stock_alert));
+
+    $reviewsCount = (int) ($product->approved_reviews_count ?? 0);
+    $avgRating = $reviewsCount > 0 ? round((float) ($product->approved_reviews_avg_rating ?? 0), 1) : 0.0;
 @endphp
 
 <article
@@ -69,8 +82,8 @@
             >
         </a>
 
-        {{-- Top Badges --}}
-        <div class="pointer-events-none absolute top-3 left-3 flex flex-wrap gap-1.5">
+        {{-- Top-Left Badges (max-w-[54%] flex-wrap gap-1) --}}
+        <div class="pointer-events-none absolute top-3 left-3 flex max-w-[54%] flex-wrap gap-1">
             @if ($product->is_b2b_kit)
                 <span class="rounded-full bg-glamora-charcoal px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-glamora-gold shadow-xs">
                     Kit B2B
@@ -81,14 +94,24 @@
                     Nuevo
                 </span>
             @endif
+            @if ($isBestseller)
+                <span class="rounded-full border border-glamora-gold/60 bg-glamora-gold/95 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-glamora-charcoal shadow-xs">
+                    Más Vendido
+                </span>
+            @endif
         </div>
 
-        {{-- Stock Pill --}}
-        <div class="pointer-events-none absolute top-3 right-3">
+        {{-- Top-Right Stock Pill & Scarcity (max-w-[44%] flex-col items-end gap-1, zero overlap) --}}
+        <div class="pointer-events-none absolute top-3 right-3 flex max-w-[44%] flex-col items-end gap-1">
             @if ($totalStock > 0)
                 <span class="rounded-full border border-emerald-200 bg-white/90 px-2.5 py-1 text-[10px] font-semibold text-emerald-800 backdrop-blur-xs">
                     Disponible · {{ $totalStock }} uds.
                 </span>
+                @if ($isLowStock)
+                    <span class="rounded-full border border-amber-300 bg-amber-50/95 px-2.5 py-0.5 text-[10px] font-bold text-amber-800 shadow-xs">
+                        Últimas Unidades
+                    </span>
+                @endif
             @else
                 <span class="rounded-full border border-rose-200 bg-white/90 px-2.5 py-1 text-[10px] font-semibold text-rose-700">
                     Agotado
@@ -110,6 +133,14 @@
             </h3>
         </a>
 
+        @if ($reviewsCount > 0)
+            <div class="mt-1 flex items-center gap-1.5 text-[11px]">
+                <span class="font-bold text-amber-500">&#9733;</span>
+                <span class="font-semibold text-glamora-charcoal">{{ number_format($avgRating, 1) }}</span>
+                <span class="text-glamora-muted">({{ $reviewsCount }})</span>
+            </div>
+        @endif
+
         <p class="mt-1.5 line-clamp-2 text-xs leading-relaxed text-glamora-muted">
             {{ $product->short_description }}
         </p>
@@ -127,9 +158,10 @@
                         <button
                             @if ($useLivewireAdd) wire:key="swatch-{{ $product->id }}-{{ $variant->id }}" @endif
                             type="button"
+                            @mouseenter="selectedIndex = {{ $idx }}"
                             @click="selectedIndex = {{ $idx }}"
-                            :class="selectedIndex === {{ $idx }} ? 'swatch-ring-active' : ''"
-                            class="swatch-ring h-6 w-6"
+                            :class="selectedIndex === {{ $idx }} ? 'ring-2 ring-glamora-charcoal ring-offset-2 ring-offset-white scale-110' : ''"
+                            class="relative inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded-full border border-black/15 transition-transform duration-150 hover:scale-110 focus:outline-none"
                             style="background-color: {{ $swatchHex }}"
                             title="{{ $variant->shade_name }} ({{ $variant->sku }})"
                             aria-label="Seleccionar tono {{ $variant->shade_name }}"
@@ -165,7 +197,7 @@
                         Mayorista desde
                     </span>
                     <span class="text-xs font-bold text-glamora-charcoal" x-text="'S/ ' + Number(current.wholesale_price).toFixed(2)">
-                        S/ {{ number_format($defaultVariant ? (float) $defaultVariant->wholesale_base_price : 0, 2) }}
+                        S/ {{ number_format($defaultWholesale, 2) }}
                     </span>
                 </div>
             </div>

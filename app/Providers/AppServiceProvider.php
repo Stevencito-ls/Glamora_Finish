@@ -16,6 +16,7 @@ use App\Policies\OrderReturnPolicy;
 use App\Policies\ProductPolicy;
 use App\Policies\UserPolicy;
 use App\Policies\WholesaleProfilePolicy;
+use App\Services\SettingService;
 use Illuminate\Auth\Events\Failed;
 use Illuminate\Auth\Events\Login;
 use Illuminate\Auth\Events\Logout;
@@ -23,9 +24,12 @@ use Illuminate\Auth\Events\Registered;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
+use Illuminate\View\View as BladeView;
 use Livewire\Livewire;
 use Livewire\Mechanisms\HandleRequests\HandleRequests;
+use Throwable;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -34,7 +38,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->singleton(SettingService::class);
     }
 
     /**
@@ -72,7 +76,28 @@ class AppServiceProvider extends ServiceProvider
         });
 
         $this->registerSecurityListeners();
+        $this->registerStorefrontViewComposer();
         $this->configureLivewireSubdirectoryRouting();
+    }
+
+    private function registerStorefrontViewComposer(): void
+    {
+        View::composer(['layouts.storefront', 'storefront.*', 'account.*', 'auth.*'], static function (BladeView $view): void {
+            try {
+                $settings = app(SettingService::class);
+                if (! $settings->settingsTableExists()) {
+                    return;
+                }
+
+                foreach ($settings->sharedViewData() as $key => $value) {
+                    if (! array_key_exists($key, $view->getData())) {
+                        $view->with($key, $value);
+                    }
+                }
+            } catch (Throwable) {
+                // Safe no-op during early migrations / missing DB
+            }
+        });
     }
 
     private function registerSecurityListeners(): void

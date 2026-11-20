@@ -281,6 +281,44 @@
                         </li>
                     @endcan
                 @endif
+
+                {{-- 7. CONFIGURACIÓN & PRO --}}
+                @if ($adminUser?->can('settings.manage') || $adminUser?->can('announcements.manage') || $adminUser?->can('reviews.moderate'))
+                    <li class="nav-header">CONFIGURACIÓN &amp; PRO</li>
+                    @can('settings.manage')
+                        <li class="nav-item">
+                            <a
+                                href="{{ route('admin.settings.index') }}"
+                                class="nav-link {{ request()->routeIs('admin.settings.*') ? 'active' : '' }}"
+                            >
+                                <i class="nav-icon fas fa-sliders-h"></i>
+                                <p>White-Label &amp; Temas</p>
+                            </a>
+                        </li>
+                    @endcan
+                    @can('announcements.manage')
+                        <li class="nav-item">
+                            <a
+                                href="{{ route('admin.announcements.index') }}"
+                                class="nav-link {{ request()->routeIs('admin.announcements.*') ? 'active' : '' }}"
+                            >
+                                <i class="nav-icon fas fa-bullhorn"></i>
+                                <p>Anuncios Topbar</p>
+                            </a>
+                        </li>
+                    @endcan
+                    @can('reviews.moderate')
+                        <li class="nav-item">
+                            <a
+                                href="{{ route('admin.reviews.index') }}"
+                                class="nav-link {{ request()->routeIs('admin.reviews.*') ? 'active' : '' }}"
+                            >
+                                <i class="nav-icon fas fa-star-half-stroke"></i>
+                                <p>Reseñas Verificadas</p>
+                            </a>
+                        </li>
+                    @endcan
+                @endif
             </ul>
         </nav>
     </div>

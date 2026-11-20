@@ -83,6 +83,11 @@
             border-radius: 0.85rem;
             box-shadow: 0 2px 10px rgba(43, 37, 35, 0.05);
         }
+        .card-header.d-flex::after,
+        .card-header .d-flex::after {
+            display: none !important;
+            content: none !important;
+        }
         a {
             text-decoration: none;
         }

@@ -8,7 +8,9 @@ use App\Enums\BannerPosition;
 use App\Events\SecurityActionTriggered;
 use App\Http\Controllers\Admin\Concerns\HandlesSafeMediaUploads;
 use App\Http\Controllers\Controller;
+use App\Models\Announcement;
 use App\Models\Banner;
+use App\Rules\SafeRasterImage;
 use App\Support\CosmeticImageResolver;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
@@ -109,15 +111,11 @@ class BannerController extends Controller
                 'button_text' => isset($validated['button_text']) && trim((string) $validated['button_text']) !== ''
                     ? trim((string) $validated['button_text'])
                     : null,
-                'button_url' => isset($validated['button_url']) && trim((string) $validated['button_url']) !== ''
-                    ? trim((string) $validated['button_url'])
-                    : null,
+                'button_url' => Announcement::sanitizeLinkUrl($validated['button_url'] ?? null),
                 'secondary_button_text' => isset($validated['secondary_button_text']) && trim((string) $validated['secondary_button_text']) !== ''
                     ? trim((string) $validated['secondary_button_text'])
                     : null,
-                'secondary_button_url' => isset($validated['secondary_button_url']) && trim((string) $validated['secondary_button_url']) !== ''
-                    ? trim((string) $validated['secondary_button_url'])
-                    : null,
+                'secondary_button_url' => Announcement::sanitizeLinkUrl($validated['secondary_button_url'] ?? null),
                 'image_path' => $imagePath,
                 'accent_image_path' => $accentImagePath,
                 'position' => $validated['position'],
@@ -179,15 +177,11 @@ class BannerController extends Controller
                 'button_text' => isset($validated['button_text']) && trim((string) $validated['button_text']) !== ''
                     ? trim((string) $validated['button_text'])
                     : null,
-                'button_url' => isset($validated['button_url']) && trim((string) $validated['button_url']) !== ''
-                    ? trim((string) $validated['button_url'])
-                    : null,
+                'button_url' => Announcement::sanitizeLinkUrl($validated['button_url'] ?? null),
                 'secondary_button_text' => isset($validated['secondary_button_text']) && trim((string) $validated['secondary_button_text']) !== ''
                     ? trim((string) $validated['secondary_button_text'])
                     : null,
-                'secondary_button_url' => isset($validated['secondary_button_url']) && trim((string) $validated['secondary_button_url']) !== ''
-                    ? trim((string) $validated['secondary_button_url'])
-                    : null,
+                'secondary_button_url' => Announcement::sanitizeLinkUrl($validated['secondary_button_url'] ?? null),
                 'image_path' => $newMain,
                 'accent_image_path' => $newAccent,
                 'position' => $validated['position'],
@@ -287,12 +281,13 @@ class BannerController extends Controller
             'image_file' => [
                 $isEdit ? 'nullable' : 'required_without:image_path',
                 'nullable',
-                'image',
+                'file',
                 'mimes:jpg,jpeg,png,webp',
                 'max:4096',
+                new SafeRasterImage(),
             ],
             'accent_image_path' => ['nullable', 'string', 'max:255'],
-            'accent_image_file' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:4096'],
+            'accent_image_file' => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp', 'max:4096', new SafeRasterImage()],
             'position' => ['required', 'string', Rule::in(BannerPosition::values())],
             'is_active' => ['nullable', 'boolean'],
             'sort_order' => ['nullable', 'integer', 'min:0', 'max:9999'],

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Admin\Concerns;
 
+use App\Services\ImageOptimizerService;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -15,28 +16,38 @@ trait HandlesSafeMediaUploads
         Request $request,
         string $field,
         string $folder,
+        bool $allowIcons = false,
+        int $maxDimension = 1200,
+        int $quality = 82,
     ): ?string {
         if (! $request->hasFile($field)) {
             return null;
         }
 
         $file = $request->file($field);
-        if (! $file instanceof UploadedFile || $this->isDisallowedMediaUpload($file)) {
+        if (! $file instanceof UploadedFile) {
             return null;
         }
 
-        $stored = $file->store($folder, 'public');
-
-        return is_string($stored) && $stored !== ''
-            ? 'storage/' . ltrim($stored, '/')
-            : null;
+        return app(ImageOptimizerService::class)->processAndStore(
+            file: $file,
+            folder: $folder,
+            maxDimension: $maxDimension,
+            quality: $quality,
+            allowIcons: $allowIcons,
+        );
     }
 
     /**
      * @return list<string>
      */
-    protected function storeSafePublicImages(Request $request, string $field, string $folder): array
-    {
+    protected function storeSafePublicImages(
+        Request $request,
+        string $field,
+        string $folder,
+        int $maxDimension = 1200,
+        int $quality = 82,
+    ): array {
         if (! $request->hasFile($field)) {
             return [];
         }
@@ -50,37 +61,28 @@ trait HandlesSafeMediaUploads
             return [];
         }
 
+        $optimizer = app(ImageOptimizerService::class);
         $storedPaths = [];
 
         foreach ($files as $file) {
-            if (! $file instanceof UploadedFile || $this->isDisallowedMediaUpload($file)) {
+            if (! $file instanceof UploadedFile) {
                 continue;
             }
 
-            $stored = $file->store($folder, 'public');
-            if (is_string($stored) && $stored !== '') {
-                $storedPaths[] = 'storage/' . ltrim($stored, '/');
+            $stored = $optimizer->processAndStore(
+                file: $file,
+                folder: $folder,
+                maxDimension: $maxDimension,
+                quality: $quality,
+                allowIcons: false,
+            );
+
+            if ($stored !== null) {
+                $storedPaths[] = $stored;
             }
         }
 
         return $storedPaths;
-    }
-
-    private function isDisallowedMediaUpload(UploadedFile $file): bool
-    {
-        if (! $file->isValid()) {
-            return true;
-        }
-
-        $extension = strtolower(trim((string) $file->getClientOriginalExtension()));
-        $guessedExtension = strtolower(trim((string) ($file->guessExtension() ?? '')));
-        $mimeType = strtolower(trim((string) $file->getMimeType()));
-        $clientMimeType = strtolower(trim((string) $file->getClientMimeType()));
-
-        return in_array($extension, ['svg', 'svgz'], true)
-            || in_array($guessedExtension, ['svg', 'svgz'], true)
-            || str_contains($mimeType, 'svg')
-            || str_contains($clientMimeType, 'svg');
     }
 
     protected function deleteSafePublicImage(?string $publicPath): void
@@ -100,7 +102,7 @@ trait HandlesSafeMediaUploads
         }
     }
 
-    protected function sanitizeSafeImagePath(?string $path): ?string
+    protected function sanitizeSafeImagePath(?string $path, bool $allowIcons = false): ?string
     {
         $clean = trim((string) $path);
         if (
@@ -113,8 +115,12 @@ trait HandlesSafeMediaUploads
             return null;
         }
 
-        $withoutQuery = (string) strtok($clean, '?#');
-        if (str_ends_with(strtolower(trim($withoutQuery)), '.svg')) {
+        $withoutQuery = strtolower(trim((string) strtok($clean, '?#')));
+        if (str_ends_with($withoutQuery, '.svg') || str_ends_with($withoutQuery, '.svgz')) {
+            return null;
+        }
+
+        if (! $allowIcons && str_ends_with($withoutQuery, '.ico')) {
             return null;
         }
 

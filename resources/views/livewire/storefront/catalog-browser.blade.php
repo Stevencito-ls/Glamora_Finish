@@ -240,11 +240,27 @@
 
         {{-- Main Content Area --}}
         <section class="lg:col-span-9">
-            <div wire:loading.flex wire:target="category,brand,search,skinType,finishType,onlyB2bKits,sort,viewMode,pricingTier,clearFilters,gotoPage,previousPage,nextPage" class="mb-4 items-center gap-2 rounded-xl border border-glamora-blush/40 bg-white px-4 py-2 text-xs text-glamora-muted">
-                <span class="h-2 w-2 animate-ping rounded-full bg-glamora-terracotta"></span>
-                Actualizando catálogo en tiempo real...
+            <div wire:loading.block wire:target="category,brand,search,skinType,finishType,onlyB2bKits,sort,viewMode,pricingTier,clearFilters,gotoPage,previousPage,nextPage" class="mb-6">
+                <div class="mb-4 flex items-center gap-2 rounded-xl border border-glamora-blush/40 bg-white px-4 py-2 text-xs text-glamora-muted">
+                    <span class="h-2 w-2 animate-ping rounded-full bg-glamora-terracotta"></span>
+                    Actualizando catálogo en tiempo real...
+                </div>
+                <div class="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
+                    @for ($sk = 0; $sk < 3; $sk++)
+                        <div class="card-glamora overflow-hidden p-4">
+                            <div class="skeleton-glamora aspect-square w-full rounded-2xl"></div>
+                            <div class="mt-4 space-y-2.5">
+                                <div class="skeleton-glamora h-3 w-1/3 rounded-full"></div>
+                                <div class="skeleton-glamora h-5 w-4/5 rounded-full"></div>
+                                <div class="skeleton-glamora h-3 w-full rounded-full"></div>
+                                <div class="skeleton-glamora h-8 w-full rounded-full"></div>
+                            </div>
+                        </div>
+                    @endfor
+                </div>
             </div>
 
+            <div wire:loading.remove wire:target="category,brand,search,skinType,finishType,onlyB2bKits,sort,viewMode,pricingTier,clearFilters,gotoPage,previousPage,nextPage">
             @if ($viewMode !== 'matrix')
                 {{-- VISTA 1: CUADRÍCULA VISUAL --}}
                 @if ($products !== null && $products->count() > 0)
@@ -255,6 +271,7 @@
                                     'product' => $product,
                                     'pricingTier' => $previewTier,
                                     'useLivewireAdd' => true,
+                                    'badges' => $productBadges[$product->id] ?? [],
                                 ])
                             </div>
                         @endforeach
@@ -445,6 +462,7 @@
                     @endif
                 </div>
             @endif
+            </div>
         </section>
     </div>
 </div>

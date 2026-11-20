@@ -331,6 +331,17 @@
                                 Descargar Cotización PDF
                             </a>
 
+                            @if ($whatsappCheckoutEnabled ?? true)
+                                <a
+                                    href="{{ $whatsappCartUrl }}"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    class="inline-flex w-full items-center justify-center gap-2 rounded-full border border-[#25D366]/50 bg-[#25D366]/10 px-5 py-2.5 text-xs font-semibold text-[#128C7E] transition hover:bg-[#25D366] hover:text-white"
+                                >
+                                    Enviar Bolsa por WhatsApp
+                                </a>
+                            @endif
+
                             <a href="{{ route('catalog.index') }}" class="block pt-2 text-center text-xs font-semibold text-glamora-muted hover:text-glamora-terracotta">
                                 &larr; Seguir explorando el catálogo
                             </a>
@@ -338,6 +349,33 @@
                     </div>
                 </aside>
             </div>
+        @endif
+
+        {{-- Completa tu Rutina (Cross-Sell) --}}
+        @if (isset($recommendations) && $recommendations->isNotEmpty())
+            <section class="mt-14 border-t border-glamora-blush/35 pt-10">
+                <div class="mb-6 flex flex-wrap items-end justify-between gap-4">
+                    <div>
+                        <span class="text-xs font-bold uppercase tracking-[0.2em] text-glamora-terracotta">Recomendado para tu bolsa</span>
+                        <h2 class="mt-1 font-serif text-3xl font-semibold text-glamora-charcoal">
+                            Completa tu Rutina
+                        </h2>
+                    </div>
+                    <a href="{{ route('catalog.index') }}" class="text-xs font-semibold uppercase tracking-wider text-glamora-charcoal hover:text-glamora-terracotta">
+                        Ver todo el catálogo &rarr;
+                    </a>
+                </div>
+
+                <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                    @foreach ($recommendations as $rec)
+                        @include('storefront.partials.product-card', [
+                            'product' => $rec,
+                            'pricingTier' => $activeTier,
+                            'badges' => $productBadges[$rec->id] ?? [],
+                        ])
+                    @endforeach
+                </div>
+            </section>
         @endif
     </div>
 @endsection

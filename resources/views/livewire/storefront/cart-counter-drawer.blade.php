@@ -196,6 +196,55 @@
                                 </div>
                             @endforeach
                         </div>
+
+                        {{-- Completa tu Rutina (Cross-Sell en Drawer) --}}
+                        @if (isset($recommendations) && $recommendations->isNotEmpty())
+                            <div class="mt-6 border-t border-glamora-blush/35 pt-5">
+                                <div class="mb-3 flex items-center justify-between">
+                                    <h3 class="font-serif text-lg font-semibold text-glamora-charcoal">
+                                        Completa tu Rutina
+                                    </h3>
+                                    <span class="text-[10px] font-bold uppercase tracking-wider text-glamora-terracotta">
+                                        Sugeridos
+                                    </span>
+                                </div>
+                                <div class="space-y-2.5">
+                                    @foreach ($recommendations as $rec)
+                                        @php
+                                            $recVariant = $rec->variants
+                                                ->filter(fn (\App\Models\ProductVariant $v): bool => (bool) $v->is_active && $v->availableStock() > 0)
+                                                ->first();
+                                        @endphp
+                                        @if ($recVariant)
+                                            <div
+                                                wire:key="drawer-cross-sell-{{ $rec->id }}-{{ $recVariant->id }}"
+                                                class="flex items-center gap-3 rounded-xl border border-glamora-blush/35 bg-white p-2.5 shadow-2xs"
+                                            >
+                                                <a href="{{ route('product.show', $rec->slug) }}" class="h-12 w-12 shrink-0 overflow-hidden rounded-lg border border-glamora-blush/30 bg-glamora-cream">
+                                                    <img src="{{ $recVariant->image_url }}" alt="{{ $rec->name }}" class="h-full w-full object-cover">
+                                                </a>
+                                                <div class="min-w-0 flex-1">
+                                                    <a href="{{ route('product.show', $rec->slug) }}" class="block truncate text-xs font-semibold text-glamora-charcoal hover:text-glamora-terracotta">
+                                                        {{ $rec->name }}
+                                                    </a>
+                                                    <p class="truncate text-[11px] text-glamora-muted">
+                                                        {{ $recVariant->shade_name }} ·
+                                                        <strong class="text-glamora-charcoal">S/ {{ number_format($recVariant->priceForTier($activeTier, 1), 2) }}</strong>
+                                                    </p>
+                                                </div>
+                                                <button
+                                                    type="button"
+                                                    wire:click="quickAddCrossSell({{ $recVariant->id }})"
+                                                    class="shrink-0 rounded-full bg-glamora-terracotta px-3 py-1.5 text-[11px] font-semibold text-white transition hover:bg-glamora-charcoal"
+                                                >
+                                                    + Agregar
+                                                </button>
+                                            </div>
+                                        @endif
+                                    @endforeach
+                                </div>
+                            </div>
+                        @endif
                     @endif
                 </div>
 
@@ -226,6 +275,16 @@
                             <a href="{{ route('cart.index') }}" class="btn-glamora-outline w-full justify-center py-2.5 text-xs uppercase tracking-wider">
                                 VER BOLSA Y COTIZAR PDF
                             </a>
+                            @if ($whatsappCheckoutEnabled ?? true)
+                                <a
+                                    href="{{ $whatsappCartUrl }}"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    class="inline-flex w-full items-center justify-center gap-2 rounded-full border border-[#25D366]/50 bg-[#25D366]/10 px-4 py-2 text-xs font-semibold text-[#128C7E] transition hover:bg-[#25D366] hover:text-white"
+                                >
+                                    Consultar Bolsa por WhatsApp
+                                </a>
+                            @endif
 
                             <div class="flex items-center justify-between pt-1">
                                 <button

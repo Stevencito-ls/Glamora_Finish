@@ -143,6 +143,13 @@
     </style>
 </head>
 <body>
+    @php
+        $pdfSettings = is_array($settings ?? null) ? $settings : app(\App\Services\SettingService::class)->all();
+        $storeName = trim((string) ($pdfSettings['store_name'] ?? '')) ?: 'Glamora Perú';
+        $storeRuc = trim((string) ($pdfSettings['store_ruc'] ?? '')) ?: '20608945123';
+        $storePhone = trim((string) ($pdfSettings['store_phone'] ?? '')) ?: '+51 917 328 085';
+        $storeAddress = trim((string) ($pdfSettings['store_address'] ?? '')) ?: 'Almacén Central: Lima Metropolitana, Perú (Envíos a todo el país vía Olva y Shalom)';
+    @endphp
     <table class="header-table">
         <tr>
             <td style="width: 56%; vertical-align: middle;">
@@ -296,7 +303,8 @@
     </table>
 
     <div class="footer-note">
-        Glamora Perú S.A.C. · Trazabilidad FEFO &amp; Control Sanitario DIGEMID · Documento interno de alistamiento para {{ $order->order_number }}.
+        Glamora Perú S.A.C. ({{ $storeName }}) · RUC {{ $storeRuc }} · {{ $storeAddress }} · Tel. {{ $storePhone }}<br>
+        Trazabilidad FEFO &amp; Control Sanitario DIGEMID · Documento interno de alistamiento para {{ $order->order_number }}.
     </div>
 </body>
 </html>

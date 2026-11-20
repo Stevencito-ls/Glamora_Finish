@@ -12,11 +12,13 @@ use App\Models\Category;
 use App\Models\Post;
 use App\Models\Product;
 use App\Services\CartSessionService;
+use App\Services\CrossSellService;
 use Illuminate\Contracts\View\View;
 
 class HomeController extends Controller
 {
-    public function index(CartSessionService $cartService): View {
+    public function index(CartSessionService $cartService, CrossSellService $crossSellService): View
+    {
         $heroBanners = Banner::query()
             ->active()
             ->forPosition(BannerPosition::HeroPrincipal)
@@ -52,6 +54,8 @@ class HomeController extends Controller
                 'category',
                 'variants' => fn ($q) => $q->active()->orderByDesc('is_default')->orderBy('id')->with(['batches', 'tieredPrices']),
             ])
+            ->withCount('approvedReviews')
+            ->withAvg('approvedReviews', 'rating')
             ->latest('id')
             ->take(4)
             ->get();
@@ -64,6 +68,8 @@ class HomeController extends Controller
                 'category',
                 'variants' => fn ($q) => $q->active()->orderByDesc('is_default')->orderBy('id')->with(['batches', 'tieredPrices']),
             ])
+            ->withCount('approvedReviews')
+            ->withAvg('approvedReviews', 'rating')
             ->orderBy('id')
             ->take(4)
             ->get();
@@ -74,6 +80,12 @@ class HomeController extends Controller
             ->take(3)
             ->get();
 
+        $bestsellerIds = $crossSellService->bestsellerIds();
+        $productBadges = $crossSellService->badgesFor(
+            $newLaunches->concat($b2bKits),
+            $bestsellerIds
+        );
+
         return view('storefront.home', [
             'heroBanners' => $heroBanners,
             'promoBanners' => $promoBanners,
@@ -83,6 +95,8 @@ class HomeController extends Controller
             'b2bKits' => $b2bKits,
             'recentPosts' => $recentPosts,
             'pricingTier' => $cartService->activeTier(),
+            'bestsellerIds' => $bestsellerIds,
+            'productBadges' => $productBadges,
         ]);
     }
 }

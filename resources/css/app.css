@@ -78,7 +78,44 @@
     }
 
     .swatch-ring-active {
-        @apply ring-2 ring-glamora-charcoal ring-offset-2 ring-offset-glamora-cream scale-110;
+        @apply ring-2 ring-glamora-charcoal ring-offset-2 ring-offset-white scale-110;
+    }
+
+    .skeleton-glamora {
+        background-color: #F3ECE4;
+        background-image: linear-gradient(
+            90deg,
+            #F3ECE4 0%,
+            #FAF6F2 40%,
+            #EFE5DA 60%,
+            #F3ECE4 100%
+        );
+        background-size: 200% 100%;
+        animation: glamora-shimmer 1.5s infinite linear;
+    }
+
+    .hero-glamora-surface {
+        background-color: var(--color-glamora-cream);
+        background-image: radial-gradient(circle at 12% 18%, color-mix(in srgb, var(--color-glamora-blush) 28%, transparent), transparent 52%),
+            radial-gradient(circle at 88% 82%, color-mix(in srgb, var(--color-glamora-gold) 14%, transparent), transparent 48%);
+    }
+
+    .surface-obsidian {
+        background-color: #1F1A18;
+        color: #FAF6F2;
+    }
+
+    .surface-obsidian .text-glamora-cream {
+        color: #FAF6F2;
+    }
+
+    @keyframes glamora-shimmer {
+        0% {
+            background-position: 200% 0;
+        }
+        100% {
+            background-position: -200% 0;
+        }
     }
 
     .input-glamora {
@@ -99,5 +136,63 @@
 
     .prose-glamora p {
         @apply mb-4 text-base leading-relaxed text-glamora-charcoal/85;
+    }
+}
+
+@layer utilities {
+    html[data-theme="noir_gold"] .bg-white {
+        background-color: #FFFFFF;
+    }
+
+    html[data-theme="noir_gold"] .bg-white\/95 {
+        background-color: rgba(255, 255, 255, 0.95);
+    }
+
+    html[data-theme="noir_gold"] .bg-white\/90 {
+        background-color: rgba(255, 255, 255, 0.9);
+    }
+
+    html[data-theme="noir_gold"] .bg-white\/80 {
+        background-color: rgba(255, 255, 255, 0.85);
+    }
+
+    html[data-theme="noir_gold"] .bg-glamora-cream {
+        background-color: #F5F3EE;
+    }
+
+    html[data-theme="noir_gold"] .bg-glamora-cream\/95 {
+        background-color: rgba(245, 243, 238, 0.95);
+    }
+
+    html[data-theme="noir_gold"] .bg-glamora-cream\/85 {
+        background-color: rgba(245, 243, 238, 0.85);
+    }
+
+    html[data-theme="noir_gold"] .bg-glamora-cream\/80 {
+        background-color: rgba(245, 243, 238, 0.8);
+    }
+
+    html[data-theme="noir_gold"] .bg-glamora-cream\/75 {
+        background-color: rgba(245, 243, 238, 0.75);
+    }
+
+    html[data-theme="noir_gold"] .bg-glamora-cream\/70 {
+        background-color: rgba(245, 243, 238, 0.7);
+    }
+
+    html[data-theme="noir_gold"] .bg-glamora-cream\/65 {
+        background-color: rgba(245, 243, 238, 0.65);
+    }
+
+    html[data-theme="noir_gold"] .bg-glamora-cream\/60 {
+        background-color: rgba(245, 243, 238, 0.6);
+    }
+
+    html[data-theme="noir_gold"] .bg-glamora-cream\/55 {
+        background-color: rgba(245, 243, 238, 0.55);
+    }
+
+    html[data-theme="noir_gold"] .bg-glamora-cream\/40 {
+        background-color: rgba(245, 243, 238, 0.4);
     }
 }

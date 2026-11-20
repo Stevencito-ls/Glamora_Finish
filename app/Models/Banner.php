@@ -69,4 +69,14 @@ class Banner extends Model
             $this->title
         );
     }
+
+    public function safeButtonUrl(): ?string
+    {
+        return Announcement::sanitizeLinkUrl($this->button_url);
+    }
+
+    public function safeSecondaryButtonUrl(): ?string
+    {
+        return Announcement::sanitizeLinkUrl($this->secondary_button_url);
+    }
 }

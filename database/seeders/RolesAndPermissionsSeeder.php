@@ -61,6 +61,9 @@ class RolesAndPermissionsSeeder extends Seeder
             'security.logs.view',
             'users.manage',
             'reports.view',
+            'settings.manage',
+            'announcements.manage',
+            'reviews.moderate',
         ];
 
         foreach ($permissions as $permissionName) {
@@ -100,6 +103,9 @@ class RolesAndPermissionsSeeder extends Seeder
                 'security.logs.view',
                 'users.manage',
                 'reports.view',
+                'settings.manage',
+                'announcements.manage',
+                'reviews.moderate',
             ],
             'Almacenero' => [
                 'catalog.view',
@@ -190,7 +196,7 @@ class RolesAndPermissionsSeeder extends Seeder
                 'phone' => '+51 945 333 444',
                 'document_type' => 'DNI',
                 'document_number' => '70123456',
-                'default_address' => 'Av. Los Frutales 412, Centro Logístico',
+                'default_address' => 'Almacén Central: Lima Metropolitana, Perú',
                 'district' => 'Ate',
                 'city' => 'Lima',
                 'last_login_at' => now()->subDay(),

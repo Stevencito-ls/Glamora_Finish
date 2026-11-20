@@ -8,15 +8,21 @@ use App\Enums\CustomerTier;
 use App\Events\SecurityActionTriggered;
 use App\Http\Controllers\Admin\Concerns\HandlesSafeMediaUploads;
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\Storefront\CatalogPdfController;
 use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Models\TieredPrice;
+use App\Rules\SafeRasterImage;
+use App\Services\CartSessionService;
+use App\Services\CrossSellService;
+use App\Services\SettingService;
 use App\Support\CosmeticImageResolver;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -93,6 +99,24 @@ class ProductController extends Controller
         ]);
     }
 
+    public function catalogPdf(
+        Request $request,
+        CatalogPdfController $catalogPdfController,
+        CartSessionService $cartService,
+        SettingService $settingService,
+        CrossSellService $crossSellService,
+    ): Response {
+        $this->authorize('viewAny', Product::class);
+
+        return $catalogPdfController->buildCatalogPdfResponse(
+            request: $request,
+            cartService: $cartService,
+            settingService: $settingService,
+            crossSellService: $crossSellService,
+            enforcePublicToggle: false,
+        );
+    }
+
     public function create(): View
     {
         $this->authorize('create', Product::class);
@@ -133,9 +157,9 @@ class ProductController extends Controller
             'meta_title' => ['nullable', 'string', 'max:180'],
             'meta_description' => ['nullable', 'string', 'max:320'],
             'main_image' => ['nullable', 'string', 'max:255'],
-            'main_image_file' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:4096'],
+            'main_image_file' => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp', 'max:4096', new SafeRasterImage()],
             'gallery_files' => ['nullable', 'array', 'max:10'],
-            'gallery_files.*' => ['image', 'mimes:jpg,jpeg,png,webp', 'max:4096'],
+            'gallery_files.*' => ['file', 'mimes:jpg,jpeg,png,webp', 'max:4096', new SafeRasterImage()],
 
             // Initial default variant
             'variant_sku' => ['required', 'string', 'max:80', 'unique:product_variants,sku'],
@@ -147,7 +171,7 @@ class ProductController extends Controller
             'variant_wholesale_base_price' => ['required', 'numeric', 'min:0.10', 'max:999999'],
             'variant_cost_price' => ['required', 'numeric', 'min:0', 'max:999999'],
             'variant_barcode' => ['nullable', 'string', 'max:80', 'unique:product_variants,barcode'],
-            'variant_image_file' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:4096'],
+            'variant_image_file' => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp', 'max:4096', new SafeRasterImage()],
         ], [
             'name.required' => 'Ingresa el nombre comercial del producto.',
             'sanitary_registration.required' => 'El registro sanitario NSOC DIGEMID es obligatorio.',
@@ -278,9 +302,9 @@ class ProductController extends Controller
             'meta_title' => ['nullable', 'string', 'max:180'],
             'meta_description' => ['nullable', 'string', 'max:320'],
             'main_image' => ['nullable', 'string', 'max:255'],
-            'main_image_file' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:4096'],
+            'main_image_file' => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp', 'max:4096', new SafeRasterImage()],
             'gallery_files' => ['nullable', 'array', 'max:10'],
-            'gallery_files.*' => ['image', 'mimes:jpg,jpeg,png,webp', 'max:4096'],
+            'gallery_files.*' => ['file', 'mimes:jpg,jpeg,png,webp', 'max:4096', new SafeRasterImage()],
             'remove_gallery' => ['nullable', 'array'],
             'remove_gallery.*' => ['nullable', 'string', 'max:500'],
         ], [
@@ -395,7 +419,7 @@ class ProductController extends Controller
             'cost_price' => ['required', 'numeric', 'min:0', 'max:999999'],
             'barcode' => ['nullable', 'string', 'max:80', 'unique:product_variants,barcode'],
             'image_path' => ['nullable', 'string', 'max:255'],
-            'image_file' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:4096'],
+            'image_file' => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp', 'max:4096', new SafeRasterImage()],
             'is_default' => ['nullable', 'boolean'],
             'is_active' => ['nullable', 'boolean'],
         ], [
@@ -466,7 +490,7 @@ class ProductController extends Controller
             'cost_price' => ['required', 'numeric', 'min:0', 'max:999999'],
             'barcode' => ['nullable', 'string', 'max:80', Rule::unique('product_variants', 'barcode')->ignore($variant->id)],
             'image_path' => ['nullable', 'string', 'max:255'],
-            'image_file' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:4096'],
+            'image_file' => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp', 'max:4096', new SafeRasterImage()],
             'is_default' => ['nullable', 'boolean'],
             'is_active' => ['nullable', 'boolean'],
         ], [

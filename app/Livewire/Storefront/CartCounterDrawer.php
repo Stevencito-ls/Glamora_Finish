@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace App\Livewire\Storefront;
 
+use App\Models\ProductVariant;
 use App\Services\CartSessionService;
+use App\Services\CrossSellService;
+use App\Services\SettingService;
 use Illuminate\Contracts\View\View;
 use Livewire\Attributes\On;
 use Livewire\Component;
@@ -75,6 +78,33 @@ class CartCounterDrawer extends Component
         $this->dispatch('swal:toast', title: "{$productName} retirado de tu Bolsa.", icon: 'info');
     }
 
+    public function quickAddCrossSell(int $variantId): void
+    {
+        $variant = ProductVariant::query()
+            ->active()
+            ->with(['product.brand', 'tieredPrices', 'batches'])
+            ->find($variantId);
+
+        if (! $variant instanceof ProductVariant || $variant->product === null || ! $variant->product->is_active) {
+            $this->dispatch('swal:toast', title: 'Este complemento ya no se encuentra disponible.', icon: 'warning');
+
+            return;
+        }
+
+        $result = app(CartSessionService::class)->addVariant($variant, 1);
+
+        $this->dispatch(
+            'swal:toast',
+            title: $result['message'],
+            icon: $result['added'] ? 'success' : 'warning',
+            productName: "{$variant->product->name} — {$variant->shade_name}"
+        );
+
+        if ($result['added']) {
+            $this->dispatch('cart-updated', openDrawer: true);
+        }
+    }
+
     public function clearCart(): void
     {
         app(CartSessionService::class)->clear();
@@ -84,6 +114,8 @@ class CartCounterDrawer extends Component
     public function render(): View
     {
         $summary = app(CartSessionService::class)->summary();
+        $recommendations = app(CrossSellService::class)->recommendationsForCart($summary['items'], 3);
+        $settings = app(SettingService::class);
 
         return view('livewire.storefront.cart-counter-drawer', [
             'items' => $summary['items'],
@@ -96,6 +128,9 @@ class CartCounterDrawer extends Component
             'total' => $summary['total'],
             'activeTier' => $summary['tier'],
             'freeShippingThreshold' => $summary['free_shipping_threshold'],
+            'recommendations' => $recommendations,
+            'whatsappCartUrl' => $settings->buildCartWhatsappUrl($summary),
+            'whatsappCheckoutEnabled' => $settings->bool('whatsapp_checkout_enabled', true),
         ]);
     }
 }

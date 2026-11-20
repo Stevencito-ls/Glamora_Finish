@@ -8,6 +8,7 @@ use App\Events\SecurityActionTriggered;
 use App\Http\Controllers\Admin\Concerns\HandlesSafeMediaUploads;
 use App\Http\Controllers\Controller;
 use App\Models\Category;
+use App\Rules\SafeRasterImage;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -218,7 +219,7 @@ class CategoryController extends Controller
             ],
             'description' => ['nullable', 'string', 'max:2000'],
             'image_path' => ['nullable', 'string', 'max:255'],
-            'image_file' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:4096'],
+            'image_file' => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp', 'max:4096', new SafeRasterImage()],
             'sort_order' => ['nullable', 'integer', 'min:0', 'max:9999'],
             'is_active' => ['nullable', 'boolean'],
             'meta_title' => ['nullable', 'string', 'max:180'],

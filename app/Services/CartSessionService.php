@@ -388,6 +388,8 @@ class CartSessionService
             'coupon_discount' => $totals['coupon_discount'],
             'coupon_warning' => $totals['coupon_warning'],
             'net_subtotal' => $totals['net_subtotal'],
+            'tax_rate' => $totals['tax_rate'],
+            'tax_percent' => $totals['tax_percent'],
             'taxable_base' => $totals['taxable_base'],
             'tax_igv' => $totals['tax_igv'],
             'shipping_method' => $totals['shipping_method'],

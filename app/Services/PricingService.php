@@ -21,11 +21,18 @@ class PricingService
 
     public function __construct(
         private readonly ?ShippingService $shippingService = null,
+        private readonly ?SettingService $settingService = null,
     ) {}
 
     public function taxRate(): float
     {
-        return self::TAX_RATE_IGV;
+        try {
+            $settings = $this->settingService ?? app(SettingService::class);
+
+            return $settings->taxRate();
+        } catch (\Throwable) {
+            return self::TAX_RATE_IGV;
+        }
     }
 
     public function resolveActiveTier(?User $user = null): CustomerTier
@@ -185,6 +192,8 @@ class PricingService
      *     coupon_discount: float,
      *     coupon_warning: ?string,
      *     net_subtotal: float,
+     *     tax_rate: float,
+     *     tax_percent: float,
      *     taxable_base: float,
      *     tax_igv: float,
      *     shipping_method: ShippingMethod,
@@ -202,7 +211,7 @@ class PricingService
     ): array {
         $effectiveTier = $tier ?? $this->resolveActiveTier();
         $method = $shippingMethod ?? ShippingMethod::Estandar;
-        $shipping = $this->shippingService ?? new ShippingService();
+        $shipping = $this->shippingService ?? app(ShippingService::class);
 
         $itemsCount = 0;
         $listCents = 0;
@@ -272,6 +281,8 @@ class PricingService
             'coupon_discount' => $priceCalculation->couponDiscount->amount,
             'coupon_warning' => $couponWarning,
             'net_subtotal' => $priceCalculation->netSubtotal->amount,
+            'tax_rate' => $priceCalculation->taxRate,
+            'tax_percent' => round($priceCalculation->taxRate * 100, 2),
             'taxable_base' => $priceCalculation->taxableBase->amount,
             'tax_igv' => $priceCalculation->taxIgv->amount,
             'shipping_method' => $method,

@@ -10,6 +10,7 @@ use App\Models\Category;
 use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Services\CartSessionService;
+use App\Services\CrossSellService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
 use Livewire\Attributes\Url;
@@ -355,6 +356,8 @@ class CatalogBrowser extends Component
                     'brand',
                     'variants' => fn ($q) => $q->active()->orderByDesc('is_default')->orderBy('id')->with(['tieredPrices', 'batches']),
                 ])
+                ->withCount('approvedReviews')
+                ->withAvg('approvedReviews', 'rating')
                 ->withMin(['variants as min_base_price' => fn ($q) => $q->active()], 'base_price');
 
             $this->applyProductFilters($productQuery, $selectedCategoryIds, applySearchOnProduct: true);
@@ -409,6 +412,12 @@ class CatalogBrowser extends Component
             }
         }
 
+        $crossSell = app(CrossSellService::class);
+        $bestsellerIds = $crossSell->bestsellerIds();
+        $productBadges = $products !== null
+            ? $crossSell->badgesFor($products->getCollection(), $bestsellerIds)
+            : [];
+
         return view('livewire.storefront.catalog-browser', [
             'categories' => $categories,
             'brands' => $brands,
@@ -421,6 +430,8 @@ class CatalogBrowser extends Component
             'matrixSelectedUnits' => $matrixSelectedUnits,
             'matrixSelectedLines' => $matrixSelectedLines,
             'matrixSelectedTotal' => round($matrixSelectedTotal, 2),
+            'bestsellerIds' => $bestsellerIds,
+            'productBadges' => $productBadges,
         ]);
     }
 

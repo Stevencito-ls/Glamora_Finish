@@ -14,6 +14,7 @@ use App\Models\Order;
 use App\Models\Post;
 use App\Http\Controllers\Admin\Concerns\HandlesSafeMediaUploads;
 use App\Models\Product;
+use App\Rules\SafeRasterImage;
 use App\Services\AbandonedCartRecoveryService;
 use Carbon\Carbon;
 use Closure;
@@ -917,7 +918,7 @@ class MarketingController extends Controller
             'excerpt' => ['nullable', 'string', 'max:1000'],
             'content' => ['required', 'string', 'min:10'],
             'cover_image' => ['nullable', 'string', 'max:255'],
-            'cover_image_file' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:4096'],
+            'cover_image_file' => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp', 'max:4096', new SafeRasterImage()],
             'reading_time_minutes' => ['nullable', 'integer', 'min:1', 'max:120'],
             'is_published' => ['nullable', 'boolean'],
             'published_at' => ['nullable', 'date'],

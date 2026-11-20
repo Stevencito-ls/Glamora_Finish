@@ -5,15 +5,24 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Storefront;
 
 use App\Enums\CustomerTier;
+use App\Enums\OrderStatus;
 use App\Http\Controllers\Controller;
+use App\Models\Order;
 use App\Models\Product;
 use App\Models\ProductVariant;
+use App\Models\User;
 use App\Services\CartSessionService;
+use App\Services\CrossSellService;
 use Illuminate\Contracts\View\View;
+use Illuminate\Support\Facades\Auth;
 
 class ProductController extends Controller
 {
-    public function show(string $slug, CartSessionService $cartService): View {
+    public function show(
+        string $slug,
+        CartSessionService $cartService,
+        CrossSellService $crossSellService,
+    ): View {
         $product = Product::query()
             ->active()
             ->where('slug', $slug)
@@ -124,8 +133,47 @@ class ProductController extends Controller
                 'category',
                 'variants' => fn ($q) => $q->active()->orderByDesc('is_default')->orderBy('id')->with(['batches', 'tieredPrices']),
             ])
+            ->withCount('approvedReviews')
+            ->withAvg('approvedReviews', 'rating')
             ->take(4)
             ->get();
+
+        $routineProducts = $crossSellService->completeRoutineFor($product, 4);
+        $bestsellerIds = $crossSellService->bestsellerIds();
+        $productBadges = $crossSellService->badgesFor(
+            collect([$product])->concat($relatedProducts)->concat($routineProducts),
+            $bestsellerIds
+        );
+
+        $reviews = $product->approvedReviews()
+            ->with('user')
+            ->get();
+
+        $reviewsCount = $reviews->count();
+        $averageRating = $reviewsCount > 0 ? round((float) $reviews->avg('rating'), 1) : 0.0;
+        $ratingDistribution = [];
+        for ($star = 5; $star >= 1; $star--) {
+            $count = $reviews->where('rating', $star)->count();
+            $ratingDistribution[$star] = [
+                'count' => $count,
+                'percent' => $reviewsCount > 0 ? (int) round(($count / $reviewsCount) * 100) : 0,
+            ];
+        }
+
+        $user = Auth::user();
+        $userReview = null;
+        $canSubmitReview = false;
+        $userHasVerifiedPurchase = false;
+
+        if ($user instanceof User) {
+            $userReview = $product->reviews()->where('user_id', $user->id)->first();
+            $canSubmitReview = $userReview === null;
+            $userHasVerifiedPurchase = Order::query()
+                ->where('user_id', $user->id)
+                ->where('status', OrderStatus::Entregado->value)
+                ->whereHas('items.variant', fn ($q) => $q->where('product_id', $product->id))
+                ->exists();
+        }
 
         $galleryImages = $product->gallery_urls;
 
@@ -134,6 +182,16 @@ class ProductController extends Controller
             'variantsData' => $variantsData,
             'galleryImages' => $galleryImages,
             'relatedProducts' => $relatedProducts,
+            'routineProducts' => $routineProducts,
+            'bestsellerIds' => $bestsellerIds,
+            'productBadges' => $productBadges,
+            'reviews' => $reviews,
+            'reviewsCount' => $reviewsCount,
+            'averageRating' => $averageRating,
+            'ratingDistribution' => $ratingDistribution,
+            'userReview' => $userReview,
+            'canSubmitReview' => $canSubmitReview,
+            'userHasVerifiedPurchase' => $userHasVerifiedPurchase,
             'activeTier' => $activeTier,
         ]);
     }

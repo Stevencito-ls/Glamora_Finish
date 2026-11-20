@@ -8,6 +8,7 @@ use App\Events\SecurityActionTriggered;
 use App\Http\Controllers\Admin\Concerns\HandlesSafeMediaUploads;
 use App\Http\Controllers\Controller;
 use App\Models\Brand;
+use App\Rules\SafeRasterImage;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -203,10 +204,10 @@ class BrandController extends Controller
             'country_origin' => ['required', 'string', 'max:80'],
             'description' => ['nullable', 'string', 'max:2000'],
             'logo_path' => ['nullable', 'string', 'max:255'],
-            'logo_file' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:4096'],
+            'logo_file' => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp', 'max:4096', new SafeRasterImage()],
             'banner_path' => ['nullable', 'string', 'max:255'],
-            'banner_file' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:4096'],
-            'website_url' => ['nullable', 'url', 'max:255'],
+            'banner_file' => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp', 'max:4096', new SafeRasterImage()],
+            'website_url' => ['nullable', 'url:http,https', 'max:255'],
             'is_cruelty_free' => ['nullable', 'boolean'],
             'is_featured' => ['nullable', 'boolean'],
             'is_active' => ['nullable', 'boolean'],

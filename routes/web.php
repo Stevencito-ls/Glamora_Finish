@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Http\Controllers\Account\AccountController;
+use App\Http\Controllers\Admin\AnnouncementController;
 use App\Http\Controllers\Admin\AuditLogController;
 use App\Http\Controllers\Admin\BannerController as AdminBannerController;
 use App\Http\Controllers\Admin\BrandController as AdminBrandController;
@@ -12,7 +13,9 @@ use App\Http\Controllers\Admin\FulfillmentController;
 use App\Http\Controllers\Admin\InventoryController;
 use App\Http\Controllers\Admin\MarketingController;
 use App\Http\Controllers\Admin\ProductController as AdminProductController;
+use App\Http\Controllers\Admin\ReviewModerationController;
 use App\Http\Controllers\Admin\RmaController;
+use App\Http\Controllers\Admin\SettingController;
 use App\Http\Controllers\Admin\UserManagementController;
 use App\Http\Controllers\Admin\WholesaleAdminController;
 use App\Http\Controllers\Auth\LoginController;
@@ -22,10 +25,12 @@ use App\Http\Controllers\Storefront\BlogController;
 use App\Http\Controllers\Storefront\BrandController;
 use App\Http\Controllers\Storefront\CartController;
 use App\Http\Controllers\Storefront\CatalogController;
+use App\Http\Controllers\Storefront\CatalogPdfController;
 use App\Http\Controllers\Storefront\CheckoutController;
 use App\Http\Controllers\Storefront\HomeController;
 use App\Http\Controllers\Storefront\NewsletterController;
 use App\Http\Controllers\Storefront\ProductController;
+use App\Http\Controllers\Storefront\ProductReviewController;
 use App\Http\Controllers\Storefront\SitemapController;
 use App\Http\Controllers\Storefront\TrackingController;
 use App\Http\Controllers\Storefront\WholesaleController;
@@ -36,9 +41,13 @@ Route::get('/sitemap.xml', [SitemapController::class, 'index'])->name('sitemap')
 Route::get('/', [HomeController::class, 'index'])->name('home');
 
 Route::get('/catalogo', [CatalogController::class, 'index'])->name('catalog.index');
+Route::get('/catalogo/pdf', [CatalogPdfController::class, 'download'])->name('catalog.pdf');
 Route::get('/catalogo/{categoria}', [CatalogController::class, 'index'])->name('catalog.category');
 
 Route::get('/producto/{slug}', [ProductController::class, 'show'])->name('product.show');
+Route::post('/producto/{slug}/resenas', [ProductReviewController::class, 'store'])
+    ->middleware(['auth', 'active'])
+    ->name('product.reviews.store');
 
 Route::get('/marcas', [BrandController::class, 'index'])->name('brands.index');
 
@@ -170,6 +179,10 @@ Route::middleware(['auth', 'active', 'role:SuperAdmin|Administrador|Almacenero|V
             });
 
             // Productos, Variantes y Precios Escalonados
+            Route::get('/catalogo-pdf', [AdminProductController::class, 'catalogPdf'])
+                ->middleware('permission:catalog.view')
+                ->name('catalog-pdf');
+
             Route::prefix('productos')->name('products.')->group(function (): void {
                 Route::get('/', [AdminProductController::class, 'index'])
                     ->middleware('permission:catalog.view')
@@ -385,4 +398,36 @@ Route::middleware(['auth', 'active', 'role:SuperAdmin|Administrador|Almacenero|V
                     Route::delete('/{post}', [MarketingController::class, 'blogDestroy'])->name('destroy');
                 });
         });
+
+        // Configuración White-Label, Tema & Onboarding
+        Route::prefix('configuracion')
+            ->name('settings.')
+            ->middleware('permission:settings.manage')
+            ->group(function (): void {
+                Route::get('/', [SettingController::class, 'index'])->name('index');
+                Route::put('/', [SettingController::class, 'update'])->name('update');
+                Route::post('/onboarding-dismiss', [SettingController::class, 'dismissOnboarding'])->name('onboarding-dismiss');
+            });
+
+        // Anuncios Dinámicos del Topbar
+        Route::prefix('anuncios')
+            ->name('announcements.')
+            ->middleware('permission:announcements.manage')
+            ->group(function (): void {
+                Route::get('/', [AnnouncementController::class, 'index'])->name('index');
+                Route::post('/', [AnnouncementController::class, 'store'])->name('store');
+                Route::put('/{announcement}', [AnnouncementController::class, 'update'])->name('update');
+                Route::patch('/{announcement}/estado', [AnnouncementController::class, 'toggle'])->name('toggle');
+                Route::delete('/{announcement}', [AnnouncementController::class, 'destroy'])->name('destroy');
+            });
+
+        // Moderación de Reseñas de Clientes
+        Route::prefix('resenas')
+            ->name('reviews.')
+            ->middleware('permission:reviews.moderate')
+            ->group(function (): void {
+                Route::get('/', [ReviewModerationController::class, 'index'])->name('index');
+                Route::patch('/{review}/moderar', [ReviewModerationController::class, 'moderate'])->name('moderate');
+                Route::delete('/{review}', [ReviewModerationController::class, 'destroy'])->name('destroy');
+            });
     });

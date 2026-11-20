@@ -1,3 +1,33 @@
+@php
+    $footerSettings = is_array($storeSettings ?? null) ? $storeSettings : [];
+    $footerSettingService = app(\App\Services\SettingService::class);
+    $footerStoreName = trim((string) ($footerSettings['store_name'] ?? '')) ?: 'Glamora Perú';
+    $footerRuc = trim((string) ($footerSettings['store_ruc'] ?? '')) ?: '20608945123';
+    $footerEmail = trim((string) ($footerSettings['store_email'] ?? '')) ?: 'info.glamora@gmail.com';
+    $footerPhone = trim((string) ($footerSettings['store_phone'] ?? '')) ?: '+51 917 328 085';
+    $footerAddress = trim((string) ($footerSettings['store_address'] ?? '')) ?: 'Almacén Central: Lima Metropolitana, Perú (Envíos a todo el país vía Olva y Shalom)';
+    $footerWhatsappUrl = $whatsappUrl ?? $footerSettingService->buildWhatsappUrl("Hola, necesito asesoría en {$footerStoreName}.");
+
+    $sanitizeSocialUrl = static function (mixed $rawUrl): ?string {
+        if (! is_string($rawUrl)) {
+            return null;
+        }
+        $clean = trim($rawUrl);
+        if ($clean === '' || ! filter_var($clean, FILTER_VALIDATE_URL)) {
+            return null;
+        }
+        $scheme = strtolower((string) parse_url($clean, PHP_URL_SCHEME));
+
+        return in_array($scheme, ['http', 'https'], true) ? $clean : null;
+    };
+
+    $socialLinks = array_filter([
+        'Instagram' => $sanitizeSocialUrl($footerSettings['social_instagram'] ?? 'https://instagram.com/glamora.pe'),
+        'TikTok' => $sanitizeSocialUrl($footerSettings['social_tiktok'] ?? 'https://tiktok.com/@glamoracosmeticos'),
+        'Facebook' => $sanitizeSocialUrl($footerSettings['social_facebook'] ?? 'https://facebook.com/glamora.pe'),
+    ]);
+@endphp
+
 <footer id="newsletter-footer" class="mt-20 border-t border-glamora-blush/35 bg-glamora-charcoal text-glamora-cream">
     {{-- Newsletter Band --}}
     <div class="border-b border-white/10 bg-[#231D1B]">
@@ -116,6 +146,29 @@
                     Control FEFO
                 </span>
             </div>
+
+            @if ($socialLinks !== [] || $footerWhatsappUrl !== '')
+                <div class="mt-5 flex flex-wrap items-center gap-2.5 text-xs">
+                    @foreach ($socialLinks as $network => $socialHref)
+                        <a
+                            href="{{ $socialHref }}"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            class="rounded-full border border-white/15 px-3 py-1 text-glamora-cream/80 transition hover:border-glamora-gold hover:text-glamora-gold"
+                        >
+                            {{ $network }}
+                        </a>
+                    @endforeach
+                    <a
+                        href="{{ $footerWhatsappUrl }}"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        class="rounded-full border border-emerald-400/40 bg-emerald-500/10 px-3 py-1 font-medium text-emerald-300 transition hover:bg-emerald-500/20"
+                    >
+                        WhatsApp
+                    </a>
+                </div>
+            @endif
         </div>
 
         <div class="grid gap-8 sm:grid-cols-3 lg:col-span-8">
@@ -145,11 +198,17 @@
                 <ul class="mt-4 space-y-2.5 text-sm text-glamora-cream/75">
                     <li><a href="{{ route('tracking.index') }}" class="transition hover:text-glamora-gold">Seguimiento de Pedido</a></li>
                     <li><a href="{{ route('tracking.index') }}#solicitud-rma" class="transition hover:text-glamora-gold">Devoluciones &amp; RMA</a></li>
-                    <li class="pt-2 text-xs text-glamora-cream/60">
-                        Centro Logístico Ate &amp; Showroom Miraflores, Lima — Perú
+                    <li>
+                        <a href="{{ $footerWhatsappUrl }}" target="_blank" rel="noopener noreferrer" class="transition hover:text-glamora-gold">
+                            WhatsApp Directo: {{ $footerPhone }}
+                        </a>
                     </li>
-                    <li class="text-xs text-glamora-cream/60">
-                        ventas@glamora.pe · +51 987 654 321
+                    <li class="pt-1 text-xs leading-relaxed text-glamora-cream/65">
+                        {{ $footerAddress }}
+                    </li>
+                    <li class="text-xs text-glamora-cream/65">
+                        <a href="mailto:{{ $footerEmail }}" class="transition hover:text-glamora-gold">{{ $footerEmail }}</a>
+                        · Lun - Sáb: 8:30 AM a 7:30 PM
                     </li>
                 </ul>
             </div>
@@ -159,7 +218,7 @@
     {{-- Bottom Bar --}}
     <div class="border-t border-white/10">
         <div class="mx-auto flex max-w-7xl flex-col items-center justify-between gap-3 px-4 py-5 text-xs text-glamora-cream/60 sm:flex-row sm:px-6 lg:px-8">
-            <p>&copy; {{ date('Y') }} Glamora Perú S.A.C. Todos los derechos reservados.</p>
+            <p>&copy; {{ date('Y') }} Glamora Perú S.A.C. ({{ $footerStoreName }}) · RUC {{ $footerRuc }}. Todos los derechos reservados.</p>
             <p>Precios en Soles (S/) incluyen IGV 18% · Despachos FEFO trazables.</p>
         </div>
     </div>

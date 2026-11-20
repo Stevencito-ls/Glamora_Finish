@@ -37,6 +37,30 @@
             </div>
 
             <div class="space-y-8 p-6 sm:p-10">
+                @if (! empty($whatsappOrderUrl) && ($whatsappCheckoutEnabled ?? true))
+                    <div class="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-[#25D366]/45 bg-[#25D366]/10 p-5">
+                        <div>
+                            <p class="text-xs font-bold uppercase tracking-wider text-[#128C7E]">
+                                Atención Directa por WhatsApp
+                            </p>
+                            <h2 class="mt-0.5 font-serif text-2xl font-semibold text-glamora-charcoal">
+                                Envía el detalle de tu pedido {{ $order->order_number }} a nuestro equipo
+                            </h2>
+                            <p class="mt-1 text-xs text-glamora-muted">
+                                Agiliza la validación de pago, factura o coordinación de entrega en Lima y provincias.
+                            </p>
+                        </div>
+                        <a
+                            href="{{ $whatsappOrderUrl }}"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            class="inline-flex items-center gap-2 rounded-full bg-[#25D366] px-6 py-3 text-xs font-bold uppercase tracking-wider text-white shadow-md transition hover:bg-[#1EB958]"
+                        >
+                            Continuar en WhatsApp &rarr;
+                        </a>
+                    </div>
+                @endif
+
                 {{-- Key Action Buttons --}}
                 <div class="flex flex-wrap gap-3">
                     <a

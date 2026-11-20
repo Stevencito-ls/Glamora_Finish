@@ -7,9 +7,9 @@
             'title' => $b->title,
             'subtitle' => $b->subtitle ?: '',
             'ctaLabel' => $b->button_text ?: 'Explorar Catálogo',
-            'ctaUrl' => $b->button_url ?: route('catalog.index'),
+            'ctaUrl' => $b->safeButtonUrl() ?: route('catalog.index'),
             'secondaryLabel' => $b->secondary_button_text ?: 'Ver Kits B2B',
-            'secondaryUrl' => $b->secondary_button_url ?: route('catalog.index', ['b2b' => 1]),
+            'secondaryUrl' => $b->safeSecondaryButtonUrl() ?: route('catalog.index', ['b2b' => 1]),
             'image' => $b->image_url,
             'accentImage' => $b->accent_image_url,
             'tag' => $b->badge_text ?: 'NSOC Verificado · Cruelty-Free',
@@ -62,15 +62,35 @@
 
 @push('structured_data')
     @php
+        $schemaSettings = is_array($storeSettings ?? null) ? $storeSettings : [];
+        $schemaStoreName = trim((string) ($schemaSettings['store_name'] ?? '')) ?: 'Glamora Perú';
+        $schemaStoreEmail = trim((string) ($schemaSettings['store_email'] ?? '')) ?: 'info.glamora@gmail.com';
+        $schemaStorePhone = trim((string) ($schemaSettings['store_phone'] ?? '')) ?: '+51 917 328 085';
+        $schemaSameAs = array_values(array_filter([
+            $schemaSettings['social_instagram'] ?? 'https://instagram.com/glamora.pe',
+            $schemaSettings['social_tiktok'] ?? 'https://tiktok.com/@glamoracosmeticos',
+            $schemaSettings['social_facebook'] ?? 'https://facebook.com/glamora.pe',
+        ], static function (mixed $url): bool {
+            if (! is_string($url)) {
+                return false;
+            }
+            $trimmed = trim($url);
+            if ($trimmed === '' || ! filter_var($trimmed, FILTER_VALIDATE_URL)) {
+                return false;
+            }
+
+            return in_array(strtolower((string) parse_url($trimmed, PHP_URL_SCHEME)), ['http', 'https'], true);
+        }));
+
         $organizationSchema = [
             '@context' => 'https://schema.org',
             '@type' => 'Organization',
-            'name' => 'Glamora Perú',
+            'name' => $schemaStoreName,
             'legalName' => 'Glamora Perú S.A.C.',
             'url' => route('home'),
             'logo' => \App\Support\CosmeticImageResolver::resolve(null, 'brand', 'aruma-atelier'),
-            'email' => 'ventas@glamora.pe',
-            'telephone' => '+51 987 654 321',
+            'email' => $schemaStoreEmail,
+            'telephone' => $schemaStorePhone,
             'address' => [
                 '@type' => 'PostalAddress',
                 'addressLocality' => 'Lima',
@@ -78,10 +98,14 @@
             ],
         ];
 
+        if ($schemaSameAs !== []) {
+            $organizationSchema['sameAs'] = $schemaSameAs;
+        }
+
         $websiteSchema = [
             '@context' => 'https://schema.org',
             '@type' => 'WebSite',
-            'name' => 'Glamora Perú',
+            'name' => $schemaStoreName,
             'url' => route('home'),
             'potentialAction' => [
                 '@type' => 'SearchAction',
@@ -117,7 +141,7 @@
         }"
         @mouseenter="paused = true"
         @mouseleave="paused = false"
-        class="relative overflow-hidden border-b border-glamora-blush/35 bg-gradient-to-br from-[#FAF6F2] via-[#F7EDE5] to-[#EFE0D5]"
+        class="hero-glamora-surface relative overflow-hidden border-b border-glamora-blush/35"
     >
         <div class="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8 lg:py-16">
             <div class="grid items-center gap-10 lg:grid-cols-12">
@@ -143,6 +167,14 @@
                         <a :href="slides[current].secondaryUrl" class="btn-glamora-outline">
                             <span x-text="slides[current].secondaryLabel"></span>
                         </a>
+                        @if ($catalogPdfEnabled ?? true)
+                            <a href="{{ route('catalog.pdf') }}" target="_blank" rel="noopener" class="inline-flex items-center gap-1.5 rounded-full border border-glamora-gold/60 bg-glamora-gold/10 px-4 py-3 text-xs font-semibold text-glamora-charcoal transition hover:bg-glamora-gold/25">
+                                <svg class="h-4 w-4 text-glamora-terracotta" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 10.5v6m0 0-3-3m3 3 3-3m2 8.25H7a2.25 2.25 0 0 1-2.25-2.25V5.25A2.25 2.25 0 0 1 7 3h5.586a1 1 0 0 1 .707.293l4.414 4.414a1 1 0 0 1 .293.707V19.5a2.25 2.25 0 0 1-2.25 2.25Z" />
+                                </svg>
+                                Descargar Catálogo PDF
+                            </a>
+                        @endif
                     </div>
 
                     {{-- Slider Controls --}}
@@ -332,6 +364,7 @@
                 @include('storefront.partials.product-card', [
                     'product' => $product,
                     'pricingTier' => $pricingTier,
+                    'badges' => $productBadges[$product->id] ?? [],
                 ])
             @endforeach
         </div>
@@ -435,7 +468,7 @@
 
     {{-- 6. KITS MAYORISTAS B2B --}}
     <section class="mx-auto max-w-7xl px-4 pt-16 sm:px-6 lg:px-8">
-        <div class="overflow-hidden rounded-[2rem] bg-glamora-charcoal text-glamora-cream shadow-xl">
+        <div class="surface-obsidian overflow-hidden rounded-[2rem] shadow-xl">
             <div class="grid items-center gap-8 p-8 sm:p-10 lg:grid-cols-12">
                 <div class="lg:col-span-5">
                     <span class="inline-flex items-center gap-2 rounded-full border border-glamora-gold/45 bg-glamora-gold/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-glamora-gold">

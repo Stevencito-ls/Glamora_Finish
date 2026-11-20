@@ -111,6 +111,11 @@ class User extends Authenticatable
         return $this->hasMany(InventoryMovement::class);
     }
 
+    public function reviews(): HasMany
+    {
+        return $this->hasMany(ProductReview::class);
+    }
+
     public function effectiveTier(): CustomerTier
     {
         $profile = $this->wholesaleProfile;
